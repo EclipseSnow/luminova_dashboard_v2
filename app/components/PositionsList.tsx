@@ -1,9 +1,8 @@
 import { fetchPortfolioMarginAccountInfo } from '../services/portfoliomarginaccountinfo';
 import { fetchUMPositionInfo } from '../services/currentcmposition';
 import { UMPositionInfo } from '../services/currentcmposition';
-import { fetchAccountBalance, fetchSpotPrice as fetchSpotPriceFromService } from '../services/accountbalance';
+import { fetchAccountBalance } from '../services/accountbalance';
 import { fetchAccountBalanceWithoutUSDT } from '../services/accountbalancewithoutusdt';
-import { fetchInterestHistory } from '../services/interest';
 
 export default async function PositionsList() {
   // Fetch account balance
@@ -14,8 +13,6 @@ export default async function PositionsList() {
   const portfoliomarginaccountinfo = await fetchPortfolioMarginAccountInfo();
   // Fetch positions
   const positions: UMPositionInfo[] = await fetchUMPositionInfo();
-  // Fetch interest history
-  const interestHistory = await fetchInterestHistory();
 
   // Calculate USDT notional value
   const usdtEntry = accountBalance.find(balance => balance.asset === 'USDT');
@@ -37,8 +34,6 @@ export default async function PositionsList() {
   const totalEquity = parseFloat(portfoliomarginaccountinfo.actualEquity);
 
   const totalInitialMargin = parseFloat(portfoliomarginaccountinfo.accountInitialMargin);
-
-  const totalMaintenanceMargin = parseFloat(portfoliomarginaccountinfo.accountMaintMargin);
 
   const totalLeverage = totalEquity > 0 ? (spotValue + Math.abs(futuresValue)) / totalEquity : 0;
 
@@ -236,7 +231,6 @@ export default async function PositionsList() {
     </div>
   );
 }
-
 // Updated function to fetch spot price for a given asset
 export async function fetchSpotPrice(asset: string): Promise<number> {
   if (asset === 'USDT') {
@@ -255,3 +249,4 @@ export async function fetchSpotPrice(asset: string): Promise<number> {
     throw error;
   }
 }
+
