@@ -18,6 +18,14 @@ export default async function PositionsList() {
   const usdtEntry = accountBalance.find(balance => balance.asset === 'USDT');
   const usdtNotional = usdtEntry ? parseFloat(usdtEntry.crossMarginAsset) * await fetchSpotPrice('USDT') : 0;
 
+  // Calculate USDC spot amount
+  const usdcEntry = accountBalance.find(balance => balance.asset === 'USDC');
+  const usdcSpotAmount = usdcEntry ? parseFloat(usdcEntry.crossMarginAsset) : 0;
+
+  // Calculate USDCUSDT amount
+  const usdcusdtPosition = positions.find(position => position.symbol === 'USDCUSDT');
+  const usdcusdtAmount = usdcusdtPosition ? parseFloat(usdcusdtPosition.notional) : 0;
+
   // Calculate total notional price for each account balance without USDT
   const accountBalanceWithNotional = await Promise.all(
     accountBalanceWithoutUSDT.map(async (balance) => {
@@ -27,9 +35,9 @@ export default async function PositionsList() {
     })
   );
 
-  const spotValue = accountBalanceWithNotional.reduce((total, position) => total + position.totalNotionalValue, 0);
+  const spotValue = accountBalanceWithNotional.reduce((total, position) => total + position.totalNotionalValue, 0) -usdtNotional;
 
-  const futuresValue = positions.reduce((total, position) => total + parseFloat(position.notional), 0);
+  const futuresValue = positions.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount;
 
   const totalEquity = parseFloat(portfoliomarginaccountinfo.actualEquity);
 
@@ -57,14 +65,22 @@ export default async function PositionsList() {
     return normalized;
   };
 
+  // Filter out USDC from accountBalance
+  const filteredAccountBalance = accountBalance.filter(balance => balance.asset !== 'USDC');
+
+  // Filter out USDCUSDT from positions
+  const filteredPositions = positions.filter(position => position.symbol !== 'USDCUSDT');
+
   // Create a map for quick lookup of futures positions by asset
   const futuresMap = new Map(
-    positions.map(position => [normalizeAsset(position.symbol), position.notional])
+    filteredPositions.map(position => [normalizeAsset(position.symbol), position.notional])
   );
 
   // Create a map for quick lookup of spot positions by asset
   const spotMap = new Map(
-    accountBalanceWithNotional.map(position => [normalizeAsset(position.asset), position.totalNotionalValue])
+    accountBalanceWithNotional
+      .filter(position => position.asset !== 'USDC')
+      .map(position => [normalizeAsset(position.asset), position.totalNotionalValue])
   );
 
   // Combine spot and futures data into a single array for table display
@@ -108,6 +124,12 @@ export default async function PositionsList() {
                 <h3 className="text-sm text-indigo-700 font-medium text-center">Total Equity</h3>
                 <p className="text-xl font-bold text-indigo-900 text-center">
                   ${parseFloat(portfoliomarginaccountinfo.actualEquity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <p className="text-xl font-bold text-indigo-900 text-center">
+                  = {parseFloat(portfoliomarginaccountinfo.accountEquityinBTC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BTC
+                </p>
+                <p className="text-lg text-indigo-700 text-center mt-2">
+                  (BTC Price: ${parseFloat(portfoliomarginaccountinfo.btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                 </p>
               </div>
             </div>
@@ -177,6 +199,18 @@ export default async function PositionsList() {
                 <h3 className="text-sm text-red-700 font-medium text-center">USDT Notional Balance</h3>
                 <p className="text-lg font-bold text-red-900 text-center">
                   ${usdtNotional.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm text-blue-700 font-medium text-center">USDC Spot Amount</h3>
+                <p className="text-lg font-bold text-blue-900 text-center">
+                  {usdcSpotAmount.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm text-orange-700 font-medium text-center">USDCUSDT Amount</h3>
+                <p className="text-lg font-bold text-orange-900 text-center">
+                  {usdcusdtAmount.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
                 </p>
               </div>
             </div>

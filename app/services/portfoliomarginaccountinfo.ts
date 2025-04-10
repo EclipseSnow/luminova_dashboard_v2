@@ -9,6 +9,8 @@ export interface PortfolioMarginAccountInfo {
   totalAvailableBalance: string;
   accountStatus: string;
   accountType: string;
+  accountEquityinBTC: string;
+  btcPrice: string;
 }
 
 export async function fetchPortfolioMarginAccountInfo(): Promise<PortfolioMarginAccountInfo> {
@@ -63,6 +65,19 @@ export async function fetchPortfolioMarginAccountInfo(): Promise<PortfolioMargin
       console.error('Unexpected response format:', data);
       throw new Error('Unexpected response format from Binance API');
     }
+
+    // Fetch the latest BTC price
+    const btcPriceResponse = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT');
+    if (!btcPriceResponse.ok) {
+      throw new Error('Failed to fetch BTC price');
+    }
+    const btcPriceData = await btcPriceResponse.json();
+    const btcPrice = parseFloat(btcPriceData.price);
+
+    // Calculate accountEquityinBTC
+    const accountEquity = parseFloat(data.accountEquity);
+    data.accountEquityinBTC = (accountEquity / btcPrice).toString();
+    data.btcPrice = btcPrice.toString();
 
     return data as PortfolioMarginAccountInfo;
   } catch (error) {
