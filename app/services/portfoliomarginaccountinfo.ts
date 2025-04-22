@@ -50,19 +50,19 @@ export async function fetchPortfolioMarginAccountInfo(): Promise<PortfolioMargin
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Binance API Error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-        url: response.url,
-        headers: response.headers,
-      });
+      // console.error('Binance API Error:', {
+      //   status: response.status,
+      //   statusText: response.statusText,
+      //   error: errorText,
+      //   url: response.url,
+      //   headers: response.headers,
+      // });
       throw new Error(`Binance API error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
     if (!data || typeof data !== 'object') {
-      console.error('Unexpected response format:', data);
+      // console.error('Unexpected response format:', data);
       throw new Error('Unexpected response format from Binance API');
     }
 
@@ -75,17 +75,17 @@ export async function fetchPortfolioMarginAccountInfo(): Promise<PortfolioMargin
     const btcPrice = parseFloat(btcPriceData.price);
 
     // Calculate accountEquityinBTC
-    const accountEquity = parseFloat(data.accountEquity);
-    data.accountEquityinBTC = (accountEquity / btcPrice).toString();
+    const actualEquity = parseFloat(data.actualEquity);
+    data.accountEquityinBTC = (actualEquity / btcPrice).toString();
     data.btcPrice = btcPrice.toString();
 
     return data as PortfolioMarginAccountInfo;
   } catch (error) {
     if (error instanceof Error) {
-      console.error('Failed to fetch portfolio margin pro account info:', error);
+      // console.error('Failed to fetch portfolio margin pro account info:', error);
       throw new Error(`Failed to fetch portfolio margin pro account info: ${error.message}`);
     } else {
-      console.error('Failed to fetch portfolio margin pro account info:', error);
+      // console.error('Failed to fetch portfolio margin pro account info:', error);
       throw new Error('Failed to fetch portfolio margin pro account info: Unknown error');
     }
   }

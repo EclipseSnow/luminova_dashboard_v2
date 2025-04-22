@@ -35,7 +35,9 @@ export default async function PositionsList() {
     })
   );
 
-  const spotValue = accountBalanceWithNotional.reduce((total, position) => total + position.totalNotionalValue, 0) -usdtNotional;
+  // Calculate spot value excluding BTC
+  const spotValue = accountBalanceWithNotional // Exclude BTC
+    .reduce((total, position) => total + position.totalNotionalValue, 0);
 
   const futuresValue = positions.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount;
 
@@ -43,11 +45,13 @@ export default async function PositionsList() {
 
   const totalInitialMargin = parseFloat(portfoliomarginaccountinfo.accountInitialMargin);
 
+  const totalPositionalExposure = spotValue + futuresValue;
+
+  const totalPositionalExposureBTC = totalPositionalExposure / parseFloat(portfoliomarginaccountinfo.btcPrice);
+
   const totalLeverage = totalEquity > 0 ? (spotValue + Math.abs(futuresValue)) / totalEquity : 0;
 
   const totalDirectionalLeverage = totalEquity > 0 ? (spotValue + futuresValue) / totalEquity : 0;
-
-  const totalPositionalExposure = spotValue + futuresValue;
 
   const normalizeAsset = (asset: string) => {
     // Remove 'USDT' and convert to uppercase
@@ -66,7 +70,7 @@ export default async function PositionsList() {
   };
 
   // Filter out USDC from accountBalance
-  const filteredAccountBalance = accountBalance.filter(balance => balance.asset !== 'USDC');
+  // const filteredAccountBalance = accountBalance.filter(balance => balance.asset !== 'USDC');
 
   // Filter out USDCUSDT from positions
   const filteredPositions = positions.filter(position => position.symbol !== 'USDCUSDT');
@@ -99,7 +103,8 @@ export default async function PositionsList() {
         grossExposure,
         grossExposurePercent: totalEquity > 0 ? (grossExposure / totalEquity) * 100 : 0,
       };
-    });
+    })
+    .filter(position => position.asset !== 'BTC'); // Exclude BTC
 
   // Filter significant positions (>2% gross exposure)
   const significantPositions = combinedData
@@ -124,12 +129,6 @@ export default async function PositionsList() {
                 <h3 className="text-sm text-indigo-700 font-medium text-center">Total Equity</h3>
                 <p className="text-xl font-bold text-indigo-900 text-center">
                   ${parseFloat(portfoliomarginaccountinfo.actualEquity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-                <p className="text-xl font-bold text-indigo-900 text-center">
-                  = {parseFloat(portfoliomarginaccountinfo.accountEquityinBTC).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} BTC
-                </p>
-                <p className="text-lg text-indigo-700 text-center mt-2">
-                  (BTC Price: ${parseFloat(portfoliomarginaccountinfo.btcPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                 </p>
               </div>
             </div>
@@ -184,7 +183,7 @@ export default async function PositionsList() {
             {/* Second Card: Spot, Futures, and USDT Debt */}
             <div className="bg-purple-100 border border-purple-300 rounded-lg shadow p-4">
               <div>
-                <h3 className="text-sm text-purple-700 font-medium text-center">Spot (including Margin) Value</h3>
+                <h3 className="text-sm text-purple-700 font-medium text-center">Spot Value</h3>
                 <p className="text-lg font-bold text-purple-900 text-center">
                   ${spotValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
@@ -199,18 +198,6 @@ export default async function PositionsList() {
                 <h3 className="text-sm text-red-700 font-medium text-center">USDT Notional Balance</h3>
                 <p className="text-lg font-bold text-red-900 text-center">
                   ${usdtNotional.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm text-blue-700 font-medium text-center">USDC Spot Amount</h3>
-                <p className="text-lg font-bold text-blue-900 text-center">
-                  {usdcSpotAmount.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm text-orange-700 font-medium text-center">USDCUSDT Amount</h3>
-                <p className="text-lg font-bold text-orange-900 text-center">
-                  {usdcusdtAmount.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}
                 </p>
               </div>
             </div>
@@ -261,6 +248,7 @@ export default async function PositionsList() {
           </table>
         </div>
       </div>
+
 
     </div>
   );
