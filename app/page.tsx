@@ -12,6 +12,8 @@ export default async function Home() {
   // Fetch server time
   const timeResponse = await fetch('https://api.binance.com/api/v3/time');
   if (!timeResponse.ok) {
+    const errorText = await timeResponse.text();
+    console.error(`Failed to fetch Binance server time. Status: ${timeResponse.status}, Error: ${errorText}`);
     throw new Error('Failed to fetch Binance server time');
   }
   const timeData = await timeResponse.json();

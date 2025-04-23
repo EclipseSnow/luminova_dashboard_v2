@@ -3,6 +3,7 @@ import { fetchUMPositionInfo } from '../services/currentcmposition';
 import { UMPositionInfo } from '../services/currentcmposition';
 import { fetchAccountBalance } from '../services/accountbalance';
 import { fetchAccountBalanceWithoutUSDT } from '../services/accountbalancewithoutusdt';
+import EquityChart from '../components/nav_graph';
 
 export default async function PositionsList() {
   // Fetch account balance
@@ -17,10 +18,6 @@ export default async function PositionsList() {
   // Calculate USDT notional value
   const usdtEntry = accountBalance.find(balance => balance.asset === 'USDT');
   const usdtNotional = usdtEntry ? parseFloat(usdtEntry.crossMarginAsset) * await fetchSpotPrice('USDT') : 0;
-
-  // Calculate USDC spot amount
-  const usdcEntry = accountBalance.find(balance => balance.asset === 'USDC');
-  const usdcSpotAmount = usdcEntry ? parseFloat(usdcEntry.crossMarginAsset) : 0;
 
   // Calculate USDCUSDT amount
   const usdcusdtPosition = positions.find(position => position.symbol === 'USDCUSDT');
@@ -46,8 +43,6 @@ export default async function PositionsList() {
   const totalInitialMargin = parseFloat(portfoliomarginaccountinfo.accountInitialMargin);
 
   const totalPositionalExposure = spotValue + futuresValue;
-
-  const totalPositionalExposureBTC = totalPositionalExposure / parseFloat(portfoliomarginaccountinfo.btcPrice);
 
   const totalLeverage = totalEquity > 0 ? (spotValue + Math.abs(futuresValue)) / totalEquity : 0;
 
@@ -204,6 +199,8 @@ export default async function PositionsList() {
           </div>
         </div>
       </div>
+
+      <EquityChart />
 
       {/* Positional Exposure Section */}
       <div className="mt-8">
