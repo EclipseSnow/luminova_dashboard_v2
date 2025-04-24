@@ -45,10 +45,10 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen p-8">
-      <h1 className="text-3xl font-bold text-center mb-8">
+      {/* <h1 className="text-3xl font-bold text-center mb-8">
         Binance BTC balances
-      </h1>
-      <p className="text-center mb-4">{`Current Date and Time: ${currentDateTime}`}</p>
+      </h1> */}
+      {/* <p className="text-center mb-4">{`Current Date and Time: ${currentDateTime}`}</p> */}
       <PositionsList />
     </main>
   );

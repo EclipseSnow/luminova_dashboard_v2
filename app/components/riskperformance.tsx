@@ -1,0 +1,58 @@
+import { createClient } from '@supabase/supabase-js';
+
+// Initialize Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL|| '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY|| '';
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Define type
+interface EquityData {
+  NAV: number;
+  actual_equity: number;
+  original_equity: number;
+  timestamp: string;
+}
+
+export async function calculateNAVMetrics() {
+  const { data, error } = await supabase
+    .from('equity_data')
+    .select('*') as { data: EquityData[] | null, error: { message: string } | null };
+
+  if (error) {
+    console.error('Error fetching data:', error.message);
+    return null;
+  }
+
+  if (!data || data.length === 0) {
+    console.log('No equity data available.');
+    return null;
+  }
+
+  // Sort by timestamp
+  const sorted = data.sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
+  const latest = sorted[sorted.length - 1];
+  const pnl = latest.actual_equity - latest.original_equity;
+  const pnlPercent = (pnl / latest.original_equity) * 100;
+
+  // Max drawdown calculation using NAVs
+  let peak = sorted[0].NAV;
+  let maxDrawdown = 0;
+
+  for (const d of sorted) {
+    if (d.NAV > peak) peak = d.NAV;
+    const drawdown = ((peak - d.NAV) / peak) * 100;
+    if (drawdown > maxDrawdown) maxDrawdown = drawdown;
+  }
+
+  return {
+    period_pnl: pnl.toFixed(2),
+    period_pnl_percent: pnlPercent.toFixed(2),
+    max_drawdown: maxDrawdown.toFixed(2)
+  };
+}
+
+// Run it
+calculateNAVMetrics();

@@ -3,7 +3,9 @@ import { fetchUMPositionInfo } from '../services/currentcmposition';
 import { UMPositionInfo } from '../services/currentcmposition';
 import { fetchAccountBalance } from '../services/accountbalance';
 import { fetchAccountBalanceWithoutUSDT } from '../services/accountbalancewithoutusdt';
-import EquityChart from '../components/nav_graph';
+import EquityChart from './total_equity';
+import NAVChart from './nav_graph';
+import { calculateNAVMetrics } from './riskperformance';
 
 export default async function PositionsList() {
   // Fetch account balance
@@ -14,6 +16,9 @@ export default async function PositionsList() {
   const portfoliomarginaccountinfo = await fetchPortfolioMarginAccountInfo();
   // Fetch positions
   const positions: UMPositionInfo[] = await fetchUMPositionInfo();
+
+  // Calculate NAV metrics
+  const navMetrics = await calculateNAVMetrics();
 
   // Calculate USDT notional value
   const usdtEntry = accountBalance.find(balance => balance.asset === 'USDT');
@@ -200,7 +205,41 @@ export default async function PositionsList() {
         </div>
       </div>
 
-      <EquityChart />
+      {/* Charts Section */}
+      <h2 className="text-2xl font-bold text-center mb-4">Risk Control and Performance Analysis</h2>
+      
+      {/* Move NAV Metrics Section here */}
+      {navMetrics && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white border border-gray-300 rounded-lg shadow p-6 text-center">
+            <h3 className="text-sm text-gray-700 font-medium">Period PnL (USDT)</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              ${navMetrics.period_pnl}
+            </p>
+          </div>
+          <div className="bg-white border border-gray-300 rounded-lg shadow p-6 text-center">
+            <h3 className="text-sm text-gray-700 font-medium">Period PnL %</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {navMetrics.period_pnl_percent}%
+            </p>
+          </div>
+          <div className="bg-white border border-gray-300 rounded-lg shadow p-6 text-center">
+            <h3 className="text-sm text-gray-700 font-medium">Max Drawdown</h3>
+            <p className="text-2xl font-bold text-gray-900">
+              {navMetrics.max_drawdown}%
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
+        <div>
+          <EquityChart />
+        </div>
+        <div>
+          <NAVChart color="orange" />
+        </div>
+      </div>
 
       {/* Positional Exposure Section */}
       <div className="mt-8">
@@ -245,7 +284,6 @@ export default async function PositionsList() {
           </table>
         </div>
       </div>
-
 
     </div>
   );
