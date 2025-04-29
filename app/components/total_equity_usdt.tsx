@@ -21,7 +21,7 @@ import 'chartjs-adapter-date-fns'; // If using date-fns
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface EquityData {
-  NAV: number;
+  actual_equity: number;
   timestamp: string;
 }
 
@@ -38,7 +38,7 @@ interface ChartData {
   }[];
 }
 
-const NAVChart = ({ color = 'blue' }) => {
+const EquityChart: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
@@ -62,9 +62,9 @@ const NAVChart = ({ color = 'blue' }) => {
         labels: sorted.map((d) => new Date(d.timestamp)),
         datasets: [
           {
-            label: 'NAV',
-            data: sorted.map((d) => d.NAV),
-            borderColor: color,
+            label: 'Actual Equity',
+            data: sorted.map((d) => d.actual_equity),
+            borderColor: 'rgba(75, 192, 192, 1)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             tension: 0,
             pointRadius: 4,
@@ -76,7 +76,7 @@ const NAVChart = ({ color = 'blue' }) => {
     };
 
     fetchEquityData();
-  }, [color]);
+  }, []);
 
   const options: ChartOptions<'line'> = {
     responsive: true,
@@ -84,7 +84,7 @@ const NAVChart = ({ color = 'blue' }) => {
       legend: { display: false },
       title: {
         display: true,
-        text: 'NAV & Accum.NAV',
+        text: 'Net Assets',
         font: {
           size: 18,
         },
@@ -110,17 +110,17 @@ const NAVChart = ({ color = 'blue' }) => {
       y: {
         title: {
           display: true,
-          // text: 'NAV',
+          // text: 'Actual Equity',
         },
       },
     },
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto">
+    <div className="w-full h-full">
       {chartData ? <Line data={chartData} options={options} /> : <p>Loading...</p>}
     </div>
   );
 };
 
-export default NAVChart;
+export default EquityChart;

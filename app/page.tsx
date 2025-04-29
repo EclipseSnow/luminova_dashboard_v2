@@ -19,7 +19,7 @@ export default async function Home() {
   const timeData = await timeResponse.json();
   const timestamp = timeData.serverTime;
 
-  const queryString = `timestamp=${timestamp}`;
+  const queryString = `timestamp=${timestamp}&recvWindow=60000`;
   const signature = crypto
     .createHmac('sha256', apiSecret)
     .update(queryString)
@@ -41,7 +41,7 @@ export default async function Home() {
   }
 
   await response.json();
-  const currentDateTime = new Date().toLocaleString();
+  const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Singapore' });
 
   return (
     <main className="min-h-screen p-8">

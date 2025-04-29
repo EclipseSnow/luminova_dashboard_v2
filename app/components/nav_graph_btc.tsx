@@ -21,7 +21,7 @@ import 'chartjs-adapter-date-fns'; // If using date-fns
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface EquityData {
-  actual_equity: number;
+  NAV: number;
   timestamp: string;
 }
 
@@ -38,13 +38,13 @@ interface ChartData {
   }[];
 }
 
-const EquityChart: React.FC = () => {
+const NAVChart = ({ color = 'blue' }) => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     const fetchEquityData = async () => {
       const { data, error } = await supabase
-        .from('equity_data')
+        .from('equity_data_btc')
         .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
       if (error) {
@@ -62,9 +62,9 @@ const EquityChart: React.FC = () => {
         labels: sorted.map((d) => new Date(d.timestamp)),
         datasets: [
           {
-            label: 'Actual Equity',
-            data: sorted.map((d) => d.actual_equity),
-            borderColor: 'rgba(75, 192, 192, 1)',
+            label: 'NAV',
+            data: sorted.map((d) => d.NAV),
+            borderColor: color,
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             tension: 0,
             pointRadius: 4,
@@ -76,7 +76,7 @@ const EquityChart: React.FC = () => {
     };
 
     fetchEquityData();
-  }, []);
+  }, [color]);
 
   const options: ChartOptions<'line'> = {
     responsive: true,
@@ -84,7 +84,7 @@ const EquityChart: React.FC = () => {
       legend: { display: false },
       title: {
         display: true,
-        text: 'Net Assets',
+        text: 'NAV & Accum.NAV',
         font: {
           size: 18,
         },
@@ -110,7 +110,7 @@ const EquityChart: React.FC = () => {
       y: {
         title: {
           display: true,
-          // text: 'Actual Equity',
+          // text: 'NAV',
         },
       },
     },
@@ -123,4 +123,4 @@ const EquityChart: React.FC = () => {
   );
 };
 
-export default EquityChart;
+export default NAVChart;

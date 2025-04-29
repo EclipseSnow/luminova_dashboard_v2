@@ -1,4 +1,4 @@
-import { fetchAccountBalance, AccountBalance } from './accountbalance';
+import { fetchAccountBalance, AccountBalance } from './accountbalance_usdt';
 
 export async function fetchAccountBalanceWithoutUSDT(): Promise<AccountBalance[]> {
   const accountBalances = await fetchAccountBalance();

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
+
 // Define a new interface for the Account Balance
-export interface AccountBalance {
+export interface AccountBalance_BTC {
   asset: string;
   totalWalletBalance: string;
   crossMarginAsset: string;
@@ -16,9 +17,9 @@ export interface AccountBalance {
   negativeBalance: string;
 }
 
-export async function fetchAccountBalance(): Promise<AccountBalance[]> {
-  const apiKey = process.env.BINANCE_API_KEY;
-  const apiSecret = process.env.BINANCE_API_SECRET;
+export async function fetchAccountBalance_BTC(): Promise<AccountBalance_BTC[]> {
+  const apiKey = process.env.BINANCE_API_KEY_BTC;
+  const apiSecret = process.env.BINANCE_API_SECRET_BTC;
 
   if (!apiKey || !apiSecret) {
     throw new Error('Binance API credentials are not configured');
@@ -35,7 +36,7 @@ export async function fetchAccountBalance(): Promise<AccountBalance[]> {
 
     const recvWindow = 60000; // Set recvWindow to 60 seconds
     const queryString = `timestamp=${timestamp}&recvWindow=${recvWindow}`;
-    
+
     // Generate signature
     const signature = crypto
       .createHmac('sha256', apiSecret)
@@ -54,49 +55,65 @@ export async function fetchAccountBalance(): Promise<AccountBalance[]> {
 
     if (!response.ok) {
       const errorText = await response.text();
-      // console.error('Binance API Error:', {
-      //   status: response.status,
-      //   statusText: response.statusText,
-      //   error: errorText,
-      //   url: response.url,
-      //   headers: response.headers,
-      // });
       throw new Error(`Binance API error: ${response.status} ${errorText}`);
     }
 
     const data = await response.json();
     if (!Array.isArray(data)) {
-      // console.error('Unexpected response format:', data);
       throw new Error('Unexpected response format from Binance API');
     }
 
-    return data as AccountBalance[];
+    return data as AccountBalance_BTC[];
   } catch (error) {
     if (error instanceof Error) {
-      // console.error('Failed to fetch account balance:', error);
       throw new Error(`Failed to fetch account balance: ${error.message}`);
     } else {
-      // console.error('Failed to fetch account balance:', error);
       throw new Error('Failed to fetch account balance: Unknown error');
     }
   }
 }
 
-// New function to fetch spot price for a given asset
-export async function fetchSpotPrice(asset: string): Promise<number> {
+// --- Price Cache Section ---
+let priceCache: Map<string, number> | null = null;
+let lastPriceFetchTime = 0; // Track last fetch time
+
+export async function fetchAllPrices_BTC(forceRefresh = false): Promise<Map<string, number>> {
+  const now = Date.now();
+  
+  // Only fetch again if more than 60 seconds have passed OR forced refresh
+  if (!forceRefresh && priceCache && (now - lastPriceFetchTime) < 60000) {
+    return priceCache;
+  }
+
+  try {
+    const response = await fetch('https://api.binance.com/api/v3/ticker/price');
+    if (!response.ok) {
+      throw new Error(`Failed to fetch prices. Status: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    priceCache = new Map(
+      data.map((item: { symbol: string; price: string }) => [item.symbol, parseFloat(item.price)])
+    );
+    lastPriceFetchTime = now; // Update last fetch time
+    return priceCache;
+  } catch (error) {
+    console.error('Error fetching prices:', error);
+    throw error;
+  }
+}
+
+export async function fetchSpotPrice_BTC(asset: string): Promise<number> {
   if (asset === 'USDT') {
     return 1; // Set spot price to 1 for USDT
   }
 
-  try {
-    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${asset}USDT`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch spot price for ${asset}`);
-    }
-    const data = await response.json();
-    return parseFloat(data.price);
-  } catch (error) {
-    console.error(`Error fetching spot price for ${asset}:`, error);
-    throw error;
+  const prices = await fetchAllPrices_BTC(); // Will use cache
+  const price = prices.get(`${asset}USDT`);
+  
+  if (price === undefined) {
+    throw new Error(`Price for ${asset} not found`);
   }
+
+  return price;
 }

@@ -34,8 +34,9 @@ export async function calculateNAVMetrics() {
   );
 
   const latest = sorted[sorted.length - 1];
-  const pnl = latest.actual_equity - latest.original_equity;
-  const pnlPercent = (pnl / latest.original_equity) * 100;
+  const originalEquity = latest.original_equity || 1; // Avoid division by zero
+  const pnl = latest.actual_equity - originalEquity;
+  const pnlPercent = (pnl / originalEquity) * 100;
 
   // Max drawdown calculation using NAVs
   let peak = sorted[0].NAV;

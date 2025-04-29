@@ -1,93 +1,144 @@
-import { fetchPortfolioMarginAccountInfo } from '../services/portfoliomarginaccountinfo';
-import { fetchUMPositionInfo } from '../services/currentcmposition';
-import { UMPositionInfo } from '../services/currentcmposition';
-import { fetchAccountBalance } from '../services/accountbalance';
-import { fetchAccountBalanceWithoutUSDT } from '../services/accountbalancewithoutusdt';
-import EquityChart from './total_equity';
-import NAVChart from './nav_graph';
-import { calculateNAVMetrics } from './riskperformance';
+import { fetchPortfolioMarginAccountInfo } from '../services/portfoliomarginaccountinfo_usdt';
+import { fetchUMPositionInfo } from '../services/currentcmposition_usdt';
+import { UMPositionInfo } from '../services/currentcmposition_usdt';
+import { fetchAccountBalance, fetchAllPrices } from '../services/accountbalance_usdt'; // ✅ now importing fetchAllPrices
+import { fetchAccountBalanceWithoutUSDT } from '../services/accountbalancewithoutusdt_usdt';
+import EquityChart from './total_equity_usdt';
+import NAVChart from './nav_graph_usdt';
+import { calculateNAVMetrics } from './riskperformance_usdt';
+
+import EquityChart_BTC from './total_equity_btc';
+import NAVChart_BTC from './nav_graph_btc';
+import { calculateNAVMetrics_BTC } from './riskperformance_btc';
+import { fetchPortfolioMarginAccountInfo_BTC } from '../services/portfoliomarginaccountinfo_btc';
+import { fetchUMPositionInfo_BTC } from '../services/currentcmposition_btc';
+import { UMPositionInfo_BTC } from '../services/currentcmposition_btc';
+import { fetchAccountBalance_BTC, fetchAllPrices_BTC } from '../services/accountbalance_btc'; // ✅ now importing fetchAllPrices
+import { fetchAccountBalanceWithoutUSDT_BTC } from '../services/accountbalancewithoutusdt_btc';
+
 
 export default async function PositionsList() {
-  // Fetch account balance
+  // Fetch all data
   const accountBalance = await fetchAccountBalance();
-  // Fetch account balance without USDT
   const accountBalanceWithoutUSDT = await fetchAccountBalanceWithoutUSDT();
-  // Fetch portfolio margin account info
   const portfoliomarginaccountinfo = await fetchPortfolioMarginAccountInfo();
-  // Fetch positions
   const positions: UMPositionInfo[] = await fetchUMPositionInfo();
-
-  // Calculate NAV metrics
   const navMetrics = await calculateNAVMetrics();
+  const prices = await fetchAllPrices(); // ✅ fetch spot prices once here
+
+  const accountBalance_BTC = await fetchAccountBalance_BTC();
+  const accountBalanceWithoutUSDT_BTC = await fetchAccountBalanceWithoutUSDT_BTC();
+  const portfoliomarginaccountinfo_BTC = await fetchPortfolioMarginAccountInfo_BTC();
+  const positions_BTC: UMPositionInfo_BTC[] = await fetchUMPositionInfo_BTC();
+  const navMetrics_BTC = await calculateNAVMetrics_BTC();
+  const prices_BTC = await fetchAllPrices_BTC(); // ✅ fetch spot prices once here
 
   // Calculate USDT notional value
   const usdtEntry = accountBalance.find(balance => balance.asset === 'USDT');
-  const usdtNotional = usdtEntry ? parseFloat(usdtEntry.crossMarginAsset) * await fetchSpotPrice('USDT') : 0;
+  const usdtPrice = prices.get('USDTUSDT') ?? 1;
+  const usdtNotional = usdtEntry ? parseFloat(usdtEntry.crossMarginAsset) * usdtPrice : 0;
 
-  // Calculate USDCUSDT amount
+  const usdtEntry_BTC = accountBalance_BTC.find(balance => balance.asset === 'USDT');
+  const usdtPrice_BTC = prices_BTC.get('USDTUSDT') ?? 1;
+  const usdtNotional_BTC = usdtEntry_BTC ? parseFloat(usdtEntry_BTC.crossMarginAsset) * usdtPrice_BTC : 0;
+
+  // Calculate USDC spot
+
+  const usdcEntry_BTC = accountBalance_BTC.find(balance => balance.asset === 'USDC');
+  const usdcSpotAmount_BTC = usdcEntry_BTC ? parseFloat(usdcEntry_BTC.crossMarginAsset) : 0;
+
+  // Calculate USDCUSDT futures amount
   const usdcusdtPosition = positions.find(position => position.symbol === 'USDCUSDT');
   const usdcusdtAmount = usdcusdtPosition ? parseFloat(usdcusdtPosition.notional) : 0;
 
+  const usdcusdtPosition_BTC = positions_BTC.find(position => position.symbol === 'USDCUSDT');
+  const usdcusdtAmount_BTC = usdcusdtPosition_BTC ? parseFloat(usdcusdtPosition_BTC.notional) : 0;
+
   // Calculate total notional price for each account balance without USDT
-  const accountBalanceWithNotional = await Promise.all(
-    accountBalanceWithoutUSDT.map(async (balance) => {
-      const spotPrice = await fetchSpotPrice(balance.asset);
-      const totalNotionalValue = spotPrice * parseFloat(balance.crossMarginAsset);
-      return { ...balance, totalNotionalValue };
-    })
-  );
+  const accountBalanceWithNotional = accountBalanceWithoutUSDT.map((balance) => {
+    const spotPrice = balance.asset === 'USDT' ? 1 : prices.get(`${balance.asset}USDT`) ?? 0;
+    const totalNotionalValue = spotPrice * parseFloat(balance.crossMarginAsset);
+    return { ...balance, totalNotionalValue };
+  });
+
+  const accountBalanceWithNotional_BTC = accountBalanceWithoutUSDT_BTC.map((balance) => {
+    const spotPrice = balance.asset === 'USDT' ? 1 : prices_BTC.get(`${balance.asset}USDT`) ?? 0;
+    const totalNotionalValue = spotPrice * parseFloat(balance.crossMarginAsset);
+    return { ...balance, totalNotionalValue };
+  });
 
   // Calculate spot value excluding BTC
-  const spotValue = accountBalanceWithNotional // Exclude BTC
+  const spotValue = accountBalanceWithNotional
     .reduce((total, position) => total + position.totalNotionalValue, 0);
+
+  const spotValue_BTC = accountBalanceWithNotional_BTC
+    .filter(position => position.asset !== 'BTC')
+    .reduce((total, position) => total + position.totalNotionalValue, 0) - usdtNotional_BTC;
 
   const futuresValue = positions.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount;
 
   const totalEquity = parseFloat(portfoliomarginaccountinfo.actualEquity);
-
   const totalInitialMargin = parseFloat(portfoliomarginaccountinfo.accountInitialMargin);
-
   const totalPositionalExposure = spotValue + futuresValue;
-
   const totalLeverage = totalEquity > 0 ? (spotValue + Math.abs(futuresValue)) / totalEquity : 0;
-
   const totalDirectionalLeverage = totalEquity > 0 ? (spotValue + futuresValue) / totalEquity : 0;
 
+  const futuresValue_BTC = positions_BTC.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount_BTC;
+  const totalEquity_BTC = parseFloat(portfoliomarginaccountinfo_BTC.actualEquity);
+  const totalInitialMargin_BTC = parseFloat(portfoliomarginaccountinfo_BTC.accountInitialMargin);
+  const totalPositionalExposure_BTC = spotValue_BTC + futuresValue_BTC;
+  const totalPositionalExposureBTC = totalPositionalExposure_BTC / parseFloat(portfoliomarginaccountinfo_BTC.btcPrice);
+  const totalLeverage_BTC = totalEquity_BTC > 0 ? (spotValue_BTC + Math.abs(futuresValue_BTC)) / totalEquity_BTC : 0;
+  const totalDirectionalLeverage_BTC = totalEquity_BTC > 0 ? (spotValue_BTC + futuresValue_BTC) / totalEquity_BTC : 0;
+
   const normalizeAsset = (asset: string) => {
-    // Remove 'USDT' and convert to uppercase
     let normalized = asset.replace('USDT', '').toUpperCase();
-
-    // Handle specific cases where futures and spot have different prefixes or suffixes
     if (normalized.startsWith('10000')) {
-      normalized = normalized.slice(5); // Remove '1000' prefix
+      normalized = normalized.slice(5);
     } else if (normalized.startsWith('1000')) {
-      normalized = normalized.slice(4); // Remove '10000' prefix
+      normalized = normalized.slice(4);
     } else if (normalized.endsWith('1000')) {
-      normalized = normalized.slice(0, -4); // Remove '1000' suffix
+      normalized = normalized.slice(0, -4);
     }
-
     return normalized;
   };
 
-  // Filter out USDC from accountBalance
-  // const filteredAccountBalance = accountBalance.filter(balance => balance.asset !== 'USDC');
+  const normalizeAsset_BTC = (asset: string) => {
+    let normalized = asset.replace('USDT', '').toUpperCase();
+    if (normalized.startsWith('10000')) {
+      normalized = normalized.slice(5);
+    } else if (normalized.startsWith('1000')) {
+      normalized = normalized.slice(4);
+    } else if (normalized.endsWith('1000')) {
+      normalized = normalized.slice(0, -4);
+    }
+    return normalized;
+  };
 
-  // Filter out USDCUSDT from positions
+  // Filter positions
   const filteredPositions = positions.filter(position => position.symbol !== 'USDCUSDT');
+  const filteredPositions_BTC = positions_BTC.filter(position => position.symbol !== 'USDCUSDT');
 
-  // Create a map for quick lookup of futures positions by asset
   const futuresMap = new Map(
     filteredPositions.map(position => [normalizeAsset(position.symbol), position.notional])
   );
 
-  // Create a map for quick lookup of spot positions by asset
+  const futuresMap_BTC = new Map(
+    filteredPositions_BTC.map(position => [normalizeAsset_BTC(position.symbol), position.notional])
+  );
+
   const spotMap = new Map(
     accountBalanceWithNotional
       .filter(position => position.asset !== 'USDC')
       .map(position => [normalizeAsset(position.asset), position.totalNotionalValue])
   );
 
-  // Combine spot and futures data into a single array for table display
+  const spotMap_BTC = new Map(
+    accountBalanceWithNotional_BTC
+      .filter(position => position.asset !== 'USDC')
+      .map(position => [normalizeAsset_BTC(position.asset), position.totalNotionalValue])
+  );
+
   const combinedData = Array.from(new Set([...spotMap.keys(), ...futuresMap.keys()]))
     .map(asset => {
       const spot = parseFloat(String(spotMap.get(asset) || '0'));
@@ -104,206 +155,222 @@ export default async function PositionsList() {
         grossExposurePercent: totalEquity > 0 ? (grossExposure / totalEquity) * 100 : 0,
       };
     })
-    .filter(position => position.asset !== 'BTC'); // Exclude BTC
+    .filter(position => position.asset !== 'BTC');
 
-  // Filter significant positions (>2% gross exposure)
+  const combinedData_BTC = Array.from(new Set([...spotMap_BTC.keys(), ...futuresMap_BTC.keys()]))
+    .map(asset => {
+      const spot = parseFloat(String(spotMap_BTC.get(asset) || '0'));
+      const futures = parseFloat(String(futuresMap_BTC.get(asset) || '0'));
+      const netExposure = spot + futures;
+      const grossExposure = spot + Math.abs(futures);
+      return {
+        asset,
+        spot,
+        futures,
+        netExposure,
+        netExposurePercent: totalEquity > 0 ? (netExposure / totalEquity) * 100 : 0,
+        grossExposure,
+        grossExposurePercent: totalEquity > 0 ? (grossExposure / totalEquity) * 100 : 0,
+      };
+    })
+    .filter(position => position.asset !== 'BTC');
+
   const significantPositions = combinedData
     .filter(position => position.grossExposurePercent > 2)
     .sort((a, b) => a.netExposure - b.netExposure);
 
-  // Filter insignificant positions (<=2% gross exposure)
+  const significantPositions_BTC = combinedData_BTC
+    .filter(position => position.grossExposurePercent > 2)
+    .sort((a, b) => a.netExposure - b.netExposure);
+
   const insignificantPositions = combinedData
     .filter(position => position.grossExposurePercent <= 2)
     .sort((a, b) => a.netExposure - b.netExposure);
 
+  const insignificantPositions_BTC = combinedData_BTC
+    .filter(position => position.grossExposurePercent <= 2)
+    .sort((a, b) => a.netExposure - b.netExposure);
+
+  // Get today's date
+  const today = new Date();
+  const formattedToday = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+
+  // Calculate a start date, e.g., 20 days before today
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() - 20);
+  const formattedStartDate = startDate.toISOString().split('T')[0];
+
   return (
-    <div className="w-full max-w-5xl mx-auto p-6">
-      {/* Account Summary Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-center mb-4">Account Summary</h2>
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* Left Column */}
-          <div className="col-span-1 md:col-span-7 space-y-4 flex flex-col justify-between">
-            <div className="bg-indigo-100 border border-indigo-300 rounded-lg shadow p-4 flex items-center justify-center">
-              <div>
-                <h3 className="text-sm text-indigo-700 font-medium text-center">Total Equity</h3>
-                <p className="text-xl font-bold text-indigo-900 text-center">
-                  ${parseFloat(portfoliomarginaccountinfo.actualEquity).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-pink-100 border border-pink-300 rounded-lg shadow p-4 flex items-center justify-center">
-                <div>
-                  <h3 className="text-sm text-pink-700 font-medium text-center">Total Maintenance Margin</h3>
-                  <p className="text-xl font-bold text-pink-900 text-center">
-                    ${parseFloat(portfoliomarginaccountinfo.accountMaintMargin).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+    <div className="w-full p-4">
+      <div className="bg-gray-50 shadow-md rounded-lg p-6 w-full flex flex-col space-y-5 ">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Binance USDT 01</h2>
+          <p className="text-sm text-gray-600">Current Date and Time: {new Date().toLocaleString()}</p>
+          <button className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</button>
+        </div>
+
+        {/* 3 vertical sections */}
+        <div className="flex flex-row w-full space-x-6">
+
+          {/* 1. Combined Left Card */}
+          <div className="w-[40%] bg-gray-50 p-4 rounded-md text-[15px] border flex items-center justify-center">
+            <div className="flex flex-row justify-center items-start space-x-16 w-full">
+
+              {/* Left: Account Metrics */}
+              <div className="flex flex-col space-y-2 w-1/2">
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Equity (USDT)</span>
+                  <span>${totalEquity.toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Positional Exposure (USDT)</span>
+                  <span>${totalPositionalExposure.toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Maintenance Margin</span>
+                  <span>${parseFloat(portfoliomarginaccountinfo.accountMaintMargin).toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Initial Margin</span>
+                  <span>${parseFloat(portfoliomarginaccountinfo.accountInitialMargin).toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Leverage</span>
+                  <span>{totalLeverage.toFixed(2)}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Directional Leverage</span>
+                  <span>{totalDirectionalLeverage.toFixed(2)}</span>
                 </div>
               </div>
-              <div className="bg-yellow-100 border border-yellow-300 rounded-lg shadow p-4 flex items-center justify-center">
-                <div>
-                  <h3 className="text-sm text-yellow-700 font-medium text-center">Total Initial Margin</h3>
-                  <p className="text-xl font-bold text-yellow-900 text-center">
-                    ${totalInitialMargin.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+
+              {/* Right: PnL Metrics */}
+              <div className="flex flex-col space-y-2 w-1/2">
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Period</span>
+                  <span>{formattedStartDate} - {formattedToday}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Period PnL</span>
+                  <span>{navMetrics?.period_pnl}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Period PnL %</span>
+                  <span>{navMetrics?.period_pnl_percent}%</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Max Drawdown</span>
+                  <span>{navMetrics?.max_drawdown}%</span>
                 </div>
               </div>
-              <div className="bg-teal-100 border border-teal-300 rounded-lg shadow p-4 flex items-center justify-center">
-                <div>
-                  <h3 className="text-sm text-teal-700 font-medium text-center">Total Leverage</h3>
-                  <p className="text-xl font-bold text-teal-900 text-center">
-                    {totalLeverage.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
-              <div className="bg-orange-100 border border-orange-300 rounded-lg shadow p-4 flex items-center justify-center">
-                <div>
-                  <h3 className="text-sm text-orange-700 font-medium text-center">Total Directional Leverage</h3>
-                  <p className="text-xl font-bold text-orange-900 text-center">
-                    {totalDirectionalLeverage.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </div>
+
             </div>
           </div>
+          {/* 2. Charts Section (Right) */}
+          <div className="w-[60%] flex flex-row space-x-4">
 
-          {/* Right Column */}
-          <div className="col-span-1 md:col-span-5 space-y-4 flex flex-col justify-between">
-            {/* First Card: Total Positional Exposure */}
-            <div className="bg-blue-100 border border-blue-300 rounded-lg shadow p-4 flex items-center justify-center h-full">
-              <div>
-                <h3 className="text-sm text-blue-700 font-medium text-center">Total Positional Exposure</h3>
-                <p className="text-xl font-bold text-blue-900 text-center">
-                  ${totalPositionalExposure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
+            {/* Net Assets Chart */}
+            <div className="w-1/2 h-[280px] bg-gray-50 p-2 rounded-md border flex items-center">
+              <EquityChart />
             </div>
 
-            {/* Second Card: Spot, Futures, and USDT Debt */}
-            <div className="bg-purple-100 border border-purple-300 rounded-lg shadow p-4">
-              <div>
-                <h3 className="text-sm text-purple-700 font-medium text-center">Spot Value</h3>
-                <p className="text-lg font-bold text-purple-900 text-center">
-                  ${spotValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm text-green-700 font-medium text-center">Futures Value</h3>
-                <p className="text-lg font-bold text-green-900 text-center">
-                  ${futuresValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div>
-                <h3 className="text-sm text-red-700 font-medium text-center">USDT Notional Balance</h3>
-                <p className="text-lg font-bold text-red-900 text-center">
-                  ${usdtNotional.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
+            {/* NAV Chart */}
+            <div className="w-1/2 h-[280px] bg-gray-50 p-2 rounded-md border flex items-center">
+              <NAVChart color="orange" />
             </div>
+
           </div>
+
         </div>
       </div>
 
-      {/* Charts Section */}
-      <h2 className="text-2xl font-bold text-center mb-4">Risk Control and Performance Analysis</h2>
-      
-      {/* Move NAV Metrics Section here */}
-      {navMetrics && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white border border-gray-300 rounded-lg shadow p-6 text-center">
-            <h3 className="text-sm text-gray-700 font-medium">Period PnL (USDT)</h3>
-            <p className="text-2xl font-bold text-gray-900">
-              ${navMetrics.period_pnl}
-            </p>
-          </div>
-          <div className="bg-white border border-gray-300 rounded-lg shadow p-6 text-center">
-            <h3 className="text-sm text-gray-700 font-medium">Period PnL %</h3>
-            <p className="text-2xl font-bold text-gray-900">
-              {navMetrics.period_pnl_percent}%
-            </p>
-          </div>
-          <div className="bg-white border border-gray-300 rounded-lg shadow p-6 text-center">
-            <h3 className="text-sm text-gray-700 font-medium">Max Drawdown</h3>
-            <p className="text-2xl font-bold text-gray-900">
-              {navMetrics.max_drawdown}%
-            </p>
-          </div>
-        </div>
-      )}
+      <div className="h-4" /> 
+      {/* Divider */}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8">
-        <div>
-          <EquityChart />
+      <div className="bg-gray-50 shadow-md rounded-lg p-6 w-full flex flex-col space-y-5 ">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <h2 className="text-lg font-semibold">Binance BTC 01</h2>
+          <p className="text-sm text-gray-600">Current Date and Time: {new Date().toLocaleString()}</p>
+          <button className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</button>
         </div>
-        <div>
-          <NAVChart color="orange" />
+
+        {/* 3 vertical sections */}
+        <div className="flex flex-row w-full space-x-6">
+
+          {/* 1. Combined Left Card */}
+          <div className="w-[40%] bg-gray-50 p-4 rounded-md text-[15px] border flex items-center justify-center">
+            <div className="flex flex-row justify-center items-start space-x-16 w-full">
+
+              {/* Left: Account Metrics */}
+              <div className="flex flex-col space-y-2 w-1/2">
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Equity (BTC)</span>
+                  <span>${totalEquity_BTC.toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Positional Exposure (BTC)</span>
+                  <span>{totalPositionalExposureBTC.toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Maintenance Margin</span>
+                  <span>${parseFloat(portfoliomarginaccountinfo_BTC.accountMaintMargin).toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Initial Margin</span>
+                  <span>${parseFloat(portfoliomarginaccountinfo_BTC.accountInitialMargin).toLocaleString()}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Leverage</span>
+                  <span>{totalLeverage_BTC.toFixed(2)}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[200px] font-semibold">Total Directional Leverage</span>
+                  <span>{totalDirectionalLeverage_BTC.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Right: PnL Metrics */}
+              <div className="flex flex-col space-y-2 w-1/2">
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Period</span>
+                  <span>{formattedStartDate} - {formattedToday}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Period PnL</span>
+                  <span>{navMetrics_BTC?.period_pnl}</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Period PnL %</span>
+                  <span>{navMetrics_BTC?.period_pnl_percent}%</span>
+                </div>
+                <div className="flex gap-2">
+                  <span className="w-[140px] font-semibold">Max Drawdown</span>
+                  <span>{navMetrics_BTC?.max_drawdown}%</span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+          {/* 2. Charts Section (Right) */}
+          <div className="w-[60%] flex flex-row space-x-4">
+
+            {/* Net Assets Chart */}
+            <div className="w-1/2 h-[280px] bg-gray-50 p-2 rounded-md border flex items-center">
+              <EquityChart_BTC />
+            </div>
+
+            {/* NAV Chart */}
+            <div className="w-1/2 h-[280px] bg-gray-50 p-2 rounded-md border flex items-center">
+              <NAVChart_BTC color="orange" />
+            </div>
+
+          </div>
+
         </div>
       </div>
-
-      {/* Positional Exposure Section */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold text-center mb-4">Exposure Info</h2>
-
-        {/* Show count of filtered positions and sorting info */}
-        <div className="mb-4 text-gray-600 text-sm">
-          <p>Showing {significantPositions.length} positions with &gt;2% gross exposure (sorted from most negative)</p>
-          {insignificantPositions.length > 0 && (
-            <p className="text-gray-400">
-              ({insignificantPositions.length} smaller positions hidden)
-            </p>
-          )}
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-2 px-4">Currency</th>
-                <th className="text-right py-2 px-4">Spot & Margin</th>
-                <th className="text-right py-2 px-4">Futures</th>
-                <th className="text-right py-2 px-4">Net Exposure($)</th>
-                <th className="text-right py-2 px-4">Net Exposure%</th>
-                <th className="text-right py-2 px-4">Gross Exposure($)</th>
-                <th className="text-right py-2 px-4">Gross Exposure%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {significantPositions.map(({ asset, spot, futures, netExposure, netExposurePercent, grossExposure, grossExposurePercent }) => (
-                <tr key={asset} className="even:bg-gray-100 hover:bg-gray-50">
-                  <td className="py-1.5 px-4">{asset}</td>
-                  <td className="py-1.5 px-4 text-right">{spot.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</td>
-                  <td className="py-1.5 px-4 text-right">{futures.toLocaleString(undefined, { minimumFractionDigits: 4, maximumFractionDigits: 4 })}</td>
-                  <td className="py-1.5 px-4 text-right">{netExposure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td className="py-1.5 px-4 text-right">{netExposurePercent.toFixed(2)}%</td>
-                  <td className="py-1.5 px-4 text-right">{grossExposure.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-                  <td className="py-1.5 px-4 text-right font-medium">{grossExposurePercent.toFixed(2)}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
     </div>
+
   );
 }
-// Updated function to fetch spot price for a given asset
-export async function fetchSpotPrice(asset: string): Promise<number> {
-  if (asset === 'USDT') {
-    return 1; // Set spot price to 1 for USDT
-  }
-
-  try {
-    const response = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${asset}USDT`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch spot price for ${asset}. Status: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
-    return parseFloat(data.price);
-  } catch (error) {
-    console.error(`Error fetching spot price for ${asset}:`, error);
-    throw error;
-  }
-}
-
