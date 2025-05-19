@@ -41,7 +41,6 @@ export default async function Home() {
   }
 
   await response.json();
-  const currentDateTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Singapore' });
 
   return (
     <main className="min-h-screen p-8">

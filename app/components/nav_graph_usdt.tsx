@@ -14,9 +14,7 @@ import {
   ChartOptions,
 } from 'chart.js';
 import { supabase } from '../lib/supabase';
-import 'chartjs-adapter-date-fns'; // If using date-fns
-// or
-// import 'chartjs-adapter-moment'; // If using moment
+import 'chartjs-adapter-date-fns';
 
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -25,7 +23,6 @@ interface EquityData {
   timestamp: string;
 }
 
-// Define the type for the chart data
 interface ChartData {
   labels: Date[];
   datasets: {
@@ -38,7 +35,7 @@ interface ChartData {
   }[];
 }
 
-const NAVChart = ({ color = 'blue' }) => {
+const NAVChart: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
@@ -66,8 +63,8 @@ const NAVChart = ({ color = 'blue' }) => {
             data: sorted.map((d) => d.NAV),
             borderColor: color,
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0,
-            pointRadius: 4,
+            tension: 0.1,
+            pointRadius: 3,
           },
         ],
       };
@@ -80,13 +77,14 @@ const NAVChart = ({ color = 'blue' }) => {
 
   const options: ChartOptions<'line'> = {
     responsive: true,
+    maintainAspectRatio: false, // 👈 Important fix
     plugins: {
       legend: { display: false },
       title: {
         display: true,
         text: 'NAV & Accum.NAV',
         font: {
-          size: 18,
+          size: 16,
         },
       },
     },
@@ -100,17 +98,13 @@ const NAVChart = ({ color = 'blue' }) => {
           },
         },
         ticks: {
-          stepSize: 1,
-        },
-        title: {
-          display: true,
-          // text: 'Timestamp',
+          maxTicksLimit: 6,
         },
       },
       y: {
+        beginAtZero: false,
         title: {
-          display: true,
-          // text: 'NAV',
+          display: false,
         },
       },
     },

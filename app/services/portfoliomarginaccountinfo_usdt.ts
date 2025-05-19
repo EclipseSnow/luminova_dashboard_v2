@@ -91,17 +91,3 @@ export async function fetchPortfolioMarginAccountInfo(): Promise<PortfolioMargin
   }
 }
 
-async function fetchSpotPrice() {
-    try {
-        const response = await fetch('YOUR_API_ENDPOINT');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        return data;
-    } catch (error) {
-        console.error('Failed to fetch spot price:', error);
-        throw error; // Re-throw the error after logging it
-    }
-}
-

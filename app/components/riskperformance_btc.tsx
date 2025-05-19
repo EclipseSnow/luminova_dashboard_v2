@@ -35,10 +35,19 @@ export async function calculateNAVMetrics_BTC() {
   );
 
   const latest = sorted[sorted.length - 1];
+  const initial = sorted[0];
   const originalEquity = latest.original_equity || 1; // Avoid division by zero
   const equity_in_btc = latest.equity_in_btc || 1;
   const pnl = equity_in_btc - originalEquity;
   const pnlPercent = (pnl / originalEquity) * 100;
+
+  // Calculate the number of days since inception
+  const inceptionDate = new Date(initial.timestamp);
+  const latestDate = new Date(latest.timestamp);
+  const daysSinceInception = (latestDate.getTime() - inceptionDate.getTime()) / (1000 * 60 * 60 * 24);
+
+  // Calculate annualized return
+  const annualizedReturn_1Y = (pnlPercent / daysSinceInception) * 365
 
   // Max drawdown calculation using NAVs
   let peak = sorted[0].NAV;
@@ -53,7 +62,8 @@ export async function calculateNAVMetrics_BTC() {
   return {
     period_pnl: pnl.toFixed(8),
     period_pnl_percent: pnlPercent.toFixed(2),
-    max_drawdown: maxDrawdown.toFixed(2)
+    max_drawdown: maxDrawdown.toFixed(2),
+    annualized_return_1Y: annualizedReturn_1Y.toFixed(3)
   };
 }
 

@@ -14,9 +14,7 @@ import {
   ChartOptions,
 } from 'chart.js';
 import { supabase } from '../lib/supabase';
-import 'chartjs-adapter-date-fns'; // If using date-fns
-// or
-// import 'chartjs-adapter-moment'; // If using moment
+import 'chartjs-adapter-date-fns';
 
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
@@ -25,7 +23,6 @@ interface EquityData {
   timestamp: string;
 }
 
-// Define the type for the chart data
 interface ChartData {
   labels: Date[];
   datasets: {
@@ -80,6 +77,7 @@ const EquityChart: React.FC = () => {
 
   const options: ChartOptions<'line'> = {
     responsive: true,
+    maintainAspectRatio: false, // 👈 Crucial to fix the height issue
     plugins: {
       legend: { display: false },
       title: {
@@ -102,22 +100,15 @@ const EquityChart: React.FC = () => {
         ticks: {
           stepSize: 1,
         },
-        title: {
-          display: true,
-          // text: 'Timestamp',
-        },
       },
       y: {
-        title: {
-          display: true,
-          // text: 'Actual Equity',
-        },
+        beginAtZero: false,
       },
     },
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full"> {/* 👈 Ensures it fills parent container */}
       {chartData ? <Line data={chartData} options={options} /> : <p>Loading...</p>}
     </div>
   );
