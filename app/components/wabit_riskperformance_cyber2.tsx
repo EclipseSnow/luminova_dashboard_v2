@@ -13,9 +13,9 @@ interface EquityData {
   timestamp: string;
 }
 
-export async function calculateNAVMetrics() {
+export async function calculateNAVMetricsCyber2() {
   const { data, error } = await supabase
-    .from('equity_data')
+    .from('equity_data_cyberX2')
     .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
   if (error) {
@@ -61,9 +61,10 @@ export async function calculateNAVMetrics() {
     period_pnl: pnl.toFixed(2),
     period_pnl_percent: pnlPercent.toFixed(2),
     max_drawdown: maxDrawdown.toFixed(2),
-    annualized_return_1Y: annualizedReturn_1Y.toFixed(4)
+    annualized_return_1Y: annualizedReturn_1Y.toFixed(4),
+    inceptionDate: inceptionDate.toISOString().split('T')[0]
   };
 }
 
 // Run it
-calculateNAVMetrics();
+calculateNAVMetricsCyber2();

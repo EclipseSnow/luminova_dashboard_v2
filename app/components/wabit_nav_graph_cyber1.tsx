@@ -35,13 +35,13 @@ interface ChartData {
   }[];
 }
 
-const NAVChart: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
+const NAVChartCyber1: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     const fetchEquityData = async () => {
       const { data, error } = await supabase
-        .from('equity_data')
+        .from('equity_data_cyberX1')
         .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
       if (error) {
@@ -117,4 +117,4 @@ const NAVChart: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
   );
 };
 
-export default NAVChart;
+export default NAVChartCyber1;

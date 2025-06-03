@@ -18,13 +18,12 @@ import 'chartjs-adapter-date-fns';
 
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-interface EquityData_BTC {
+interface EquityData {
   actual_equity: number;
   timestamp: string;
-  equity_in_btc: number;
 }
 
-interface ChartData_BTC {
+interface ChartData {
   labels: Date[];
   datasets: {
     label: string;
@@ -36,14 +35,14 @@ interface ChartData_BTC {
   }[];
 }
 
-const EquityChart_BTC: React.FC = () => {
-  const [chartData, setChartData] = useState<ChartData_BTC | null>(null);
+const EquityChart1: React.FC = () => {
+  const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     const fetchEquityData = async () => {
       const { data, error } = await supabase
-        .from('equity_data_btc')
-        .select('*') as { data: EquityData_BTC[] | null, error: { message: string } | null };
+        .from('equity_data_wabit1')
+        .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
       if (error) {
         console.error('Error fetching data:', error.message);
@@ -56,16 +55,16 @@ const EquityChart_BTC: React.FC = () => {
         (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
       );
 
-      const formattedData: ChartData_BTC = {
+      const formattedData: ChartData = {
         labels: sorted.map((d) => new Date(d.timestamp)),
         datasets: [
           {
-            label: 'Equity in BTC',
-            data: sorted.map((d) => d.equity_in_btc),
+            label: 'Actual Equity',
+            data: sorted.map((d) => d.actual_equity),
             borderColor: 'rgba(75, 192, 192, 1)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.2,
-            pointRadius: 2,
+            tension: 0,
+            pointRadius: 4,
           },
         ],
       };
@@ -78,14 +77,14 @@ const EquityChart_BTC: React.FC = () => {
 
   const options: ChartOptions<'line'> = {
     responsive: true,
-    maintainAspectRatio: false, // 👈 Crucial for dynamic sizing
+    maintainAspectRatio: false, // 👈 Crucial to fix the height issue
     plugins: {
       legend: { display: false },
       title: {
         display: true,
-        text: 'Net Assets (BTC)',
+        text: 'Net Assets',
         font: {
-          size: 16,
+          size: 18,
         },
       },
     },
@@ -99,22 +98,20 @@ const EquityChart_BTC: React.FC = () => {
           },
         },
         ticks: {
-          maxTicksLimit: 6,
+          stepSize: 1,
         },
       },
       y: {
-        title: {
-          display: false,
-        },
+        beginAtZero: false,
       },
     },
   };
 
   return (
-    <div className="w-full h-full"> {/* 👈 Ensure it fills the parent container */}
+    <div className="w-full h-full"> {/* 👈 Ensures it fills parent container */}
       {chartData ? <Line data={chartData} options={options} /> : <p>Loading...</p>}
     </div>
   );
 };
 
-export default EquityChart_BTC;
+export default EquityChart1;

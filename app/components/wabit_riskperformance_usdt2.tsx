@@ -6,18 +6,17 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY|| '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Define type
-interface EquityData_BTC {
+interface EquityData {
   NAV: number;
   actual_equity: number;
   original_equity: number;
   timestamp: string;
-  equity_in_btc: number;
 }
 
-export async function calculateNAVMetrics_BTC() {
+export async function calculateNAVMetrics2() {
   const { data, error } = await supabase
-    .from('equity_data_btc')
-    .select('*') as { data: EquityData_BTC[] | null, error: { message: string } | null };
+    .from('equity_data_wabit2')
+    .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
   if (error) {
     console.error('Error fetching data:', error.message);
@@ -37,9 +36,8 @@ export async function calculateNAVMetrics_BTC() {
   const latest = sorted[sorted.length - 1];
   const initial = sorted[0];
   const originalEquity = latest.original_equity || 1; // Avoid division by zero
-  const equity_in_btc = latest.equity_in_btc || 1;
-  const pnl = equity_in_btc - originalEquity;
-  const pnlPercent = (pnl / originalEquity) * 100;
+  const pnl = latest.actual_equity - originalEquity;
+  const pnlPercent = (latest.NAV-1)*100;
 
   // Calculate the number of days since inception
   const inceptionDate = new Date(initial.timestamp);
@@ -60,12 +58,13 @@ export async function calculateNAVMetrics_BTC() {
   }
 
   return {
-    period_pnl: pnl.toFixed(8),
+    period_pnl: pnl.toFixed(2),
     period_pnl_percent: pnlPercent.toFixed(2),
     max_drawdown: maxDrawdown.toFixed(2),
-    annualized_return_1Y: annualizedReturn_1Y.toFixed(3)
+    annualized_return_1Y: annualizedReturn_1Y.toFixed(4),
+    inceptionDate: inceptionDate.toISOString().split('T')[0]
   };
 }
 
 // Run it
-calculateNAVMetrics_BTC();
+calculateNAVMetrics2();

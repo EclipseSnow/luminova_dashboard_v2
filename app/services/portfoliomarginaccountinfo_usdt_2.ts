@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 // Define a new interface for the Portfolio Margin Pro Account Info
-export interface PortfolioMarginAccountInfo_BTC {
+export interface PortfolioMarginAccountInfo2 {
   uniMMR: string;
   accountEquity: string;
   actualEquity: string;
@@ -13,9 +13,9 @@ export interface PortfolioMarginAccountInfo_BTC {
   btcPrice: string;
 }
 
-export async function fetchPortfolioMarginAccountInfo_BTC(): Promise<PortfolioMarginAccountInfo_BTC> {
-  const apiKey = process.env.BINANCE_API_KEY_BTC;
-  const apiSecret = process.env.BINANCE_API_SECRET_BTC;
+export async function fetchPortfolioMarginAccountInfo2(): Promise<PortfolioMarginAccountInfo2> {
+  const apiKey = process.env.BINANCE_API_KEY_2;
+  const apiSecret = process.env.BINANCE_API_SECRET_2;
 
   if (!apiKey || !apiSecret) {
     throw new Error('Binance API credentials are not configured');
@@ -79,7 +79,7 @@ export async function fetchPortfolioMarginAccountInfo_BTC(): Promise<PortfolioMa
     data.accountEquityinBTC = (actualEquity / btcPrice).toString();
     data.btcPrice = btcPrice.toString();
 
-    return data as PortfolioMarginAccountInfo_BTC;
+    return data as PortfolioMarginAccountInfo2;
   } catch (error) {
     if (error instanceof Error) {
       // console.error('Failed to fetch portfolio margin pro account info:', error);

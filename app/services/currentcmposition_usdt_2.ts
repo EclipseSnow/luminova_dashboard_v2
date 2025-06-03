@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-export interface UMPositionInfo_BTC {
+export interface UMPositionInfo2 {
   symbol: string;
   positionAmt: string;
   entryPrice: string;
@@ -14,16 +14,16 @@ export interface UMPositionInfo_BTC {
   notional: string;
 }
 
-export async function fetchUMPositionInfo_BTC(): Promise<UMPositionInfo_BTC[]> {
-  const apiKey = process.env.BINANCE_API_KEY_BTC;
-  const apiSecret = process.env.BINANCE_API_SECRET_BTC;
+export async function fetchUMPositionInfo2(): Promise<UMPositionInfo2[]> {
+  const apiKey = process.env.BINANCE_API_KEY_2;
+  const apiSecret = process.env.BINANCE_API_SECRET_2;
 
   if (!apiKey || !apiSecret) {
     throw new Error('Binance API credentials are not configured');
   }
 
   try {
-    // --- FIX: Use Binance Server Time instead of Date.now() ---
+    // First get server time
     const timeResponse = await fetch('https://api.binance.com/api/v3/time');
     if (!timeResponse.ok) {
       throw new Error('Failed to fetch Binance server time');
@@ -67,7 +67,8 @@ export async function fetchUMPositionInfo_BTC(): Promise<UMPositionInfo_BTC[]> {
       throw new Error('Unexpected response format from Binance API');
     }
 
-    return data as UMPositionInfo_BTC[];
+
+    return data as UMPositionInfo2[];
   } catch (error) {
     if (error instanceof Error) {
       console.error('Failed to fetch UM position info:', error);
