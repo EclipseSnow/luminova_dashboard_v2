@@ -13,9 +13,9 @@ interface EquityData {
   timestamp: string;
 }
 
-export async function calculateNAVMetricsCyber1() {
+export async function calculateNAVMetricsCyberBinance3() {
   const { data, error } = await supabase
-    .from('equity_data_cyberX1')
+    .from('luminova_Binance_3')
     .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
   if (error) {
@@ -67,4 +67,4 @@ export async function calculateNAVMetricsCyber1() {
 }
 
 // Run it
-calculateNAVMetricsCyber1();
+calculateNAVMetricsCyberBinance3();

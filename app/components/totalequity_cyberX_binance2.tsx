@@ -19,7 +19,7 @@ import 'chartjs-adapter-date-fns';
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface EquityData {
-  NAV: number;
+  actual_equity: number;
   timestamp: string;
 }
 
@@ -35,13 +35,13 @@ interface ChartData {
   }[];
 }
 
-const NAVChartCyber1: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
+const EquityChartCyberBinance2: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     const fetchEquityData = async () => {
       const { data, error } = await supabase
-        .from('equity_data_cyberX1')
+        .from('luminova_Binance_2')
         .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
       if (error) {
@@ -59,12 +59,12 @@ const NAVChartCyber1: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
         labels: sorted.map((d) => new Date(d.timestamp)),
         datasets: [
           {
-            label: 'NAV',
-            data: sorted.map((d) => d.NAV),
-            borderColor: color,
+            label: 'Actual Equity',
+            data: sorted.map((d) => d.actual_equity),
+            borderColor: 'rgba(75, 192, 192, 1)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1,
-            pointRadius: 3,
+            tension: 0,
+            pointRadius: 4,
           },
         ],
       };
@@ -73,18 +73,18 @@ const NAVChartCyber1: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
     };
 
     fetchEquityData();
-  }, [color]);
+  }, []);
 
   const options: ChartOptions<'line'> = {
     responsive: true,
-    maintainAspectRatio: false, // 👈 Important fix
+    maintainAspectRatio: false, // 👈 Crucial to fix the height issue
     plugins: {
       legend: { display: false },
       title: {
         display: true,
-        text: 'NAV & Accum.NAV',
+        text: 'Net Assets',
         font: {
-          size: 16,
+          size: 18,
         },
       },
     },
@@ -98,23 +98,20 @@ const NAVChartCyber1: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
           },
         },
         ticks: {
-          maxTicksLimit: 6,
+          stepSize: 1,
         },
       },
       y: {
         beginAtZero: false,
-        title: {
-          display: false,
-        },
       },
     },
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full"> {/* 👈 Ensures it fills parent container */}
       {chartData ? <Line data={chartData} options={options} /> : <p>Loading...</p>}
     </div>
   );
 };
 
-export default NAVChartCyber1;
+export default EquityChartCyberBinance2;

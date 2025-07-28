@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 
 // Define a new interface for the Account Balance
-export interface AccountBalanceCyber1 {
+export interface AccountBalance3 {
   asset: string;
   totalWalletBalance: string;
   crossMarginAsset: string;
@@ -17,9 +17,9 @@ export interface AccountBalanceCyber1 {
   negativeBalance: string;
 }
 
-export async function fetchAccountBalanceCyber1(): Promise<AccountBalanceCyber1[]> {
-  const apiKey = process.env.CYBERX_API_KEY_1;
-  const apiSecret = process.env.CYBERX_API_SECRET_1;
+export async function fetchAccountBalance3(): Promise<AccountBalance3[]> {
+  const apiKey = process.env.BINANCE_API_KEY_3;
+  const apiSecret = process.env.BINANCE_API_SECRET_3;
 
   if (!apiKey || !apiSecret) {
     throw new Error('Binance API credentials are not configured');
@@ -44,7 +44,7 @@ export async function fetchAccountBalanceCyber1(): Promise<AccountBalanceCyber1[
       .digest('hex');
 
     const response = await fetch(
-      `https://api.binance.com/sapi/v1/portfolio/balance?${queryString}&signature=${signature}`,
+      `https://papi.binance.com/papi/v1/balance?${queryString}&signature=${signature}`,
       {
         headers: {
           'X-MBX-APIKEY': apiKey,
@@ -63,7 +63,7 @@ export async function fetchAccountBalanceCyber1(): Promise<AccountBalanceCyber1[
       throw new Error('Unexpected response format from Binance API');
     }
 
-    return data as AccountBalanceCyber1[];
+    return data as AccountBalance3[];
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch account balance: ${error.message}`);
@@ -77,7 +77,7 @@ export async function fetchAccountBalanceCyber1(): Promise<AccountBalanceCyber1[
 let priceCache: Map<string, number> | null = null;
 let lastPriceFetchTime = 0; // Track last fetch time
 
-export async function fetchAllPrices(forceRefresh = false): Promise<Map<string, number>> {
+export async function fetchAllPrices2(forceRefresh = false): Promise<Map<string, number>> {
   const now = Date.now();
   
   // Only fetch again if more than 60 seconds have passed OR forced refresh
@@ -103,12 +103,12 @@ export async function fetchAllPrices(forceRefresh = false): Promise<Map<string, 
   }
 }
 
-export async function fetchSpotPrice(asset: string): Promise<number> {
+export async function fetchSpotPrice2(asset: string): Promise<number> {
   if (asset === 'USDT') {
     return 1; // Set spot price to 1 for USDT
   }
 
-  const prices = await fetchAllPrices(); // Will use cache
+  const prices = await fetchAllPrices2(); // Will use cache
   const price = prices.get(`${asset}USDT`);
   
   if (price === undefined) {

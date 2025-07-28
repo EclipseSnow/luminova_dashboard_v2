@@ -35,13 +35,13 @@ interface ChartData {
   }[];
 }
 
-const EquityChart1: React.FC = () => {
+const EquityChartCyberOKX1: React.FC = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     const fetchEquityData = async () => {
       const { data, error } = await supabase
-        .from('equity_data_wabit1')
+        .from('luminova_OKX_1')
         .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
       if (error) {
@@ -114,4 +114,4 @@ const EquityChart1: React.FC = () => {
   );
 };
 
-export default EquityChart1;
+export default EquityChartCyberOKX1;

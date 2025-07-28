@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-export interface PositionInfoCyber1 {
+export interface UMPositionInfo3 {
   symbol: string;
   positionAmt: string;
   entryPrice: string;
@@ -14,9 +14,9 @@ export interface PositionInfoCyber1 {
   notional: string;
 }
 
-export async function fetchPositionInfoCyber1(): Promise<PositionInfoCyber1[]> {
-  const apiKey = process.env.CYBERX_API_KEY_1;
-  const apiSecret = process.env.CYBERX_API_SECRET_1;
+export async function fetchUMPositionInfo3(): Promise<UMPositionInfo3[]> {
+  const apiKey = process.env.BINANCE_API_KEY_3;
+  const apiSecret = process.env.BINANCE_API_SECRET_3;
 
   if (!apiKey || !apiSecret) {
     throw new Error('Binance API credentials are not configured');
@@ -40,7 +40,7 @@ export async function fetchPositionInfoCyber1(): Promise<PositionInfoCyber1[]> {
       .digest('hex');
 
     const response = await fetch(
-      `https://fapi.binance.com/fapi/v3/positionRisk?${queryString}&signature=${signature}`,
+      `https://papi.binance.com/papi/v1/um/positionRisk?${queryString}&signature=${signature}`,
       {
         headers: {
           'X-MBX-APIKEY': apiKey,
@@ -68,7 +68,7 @@ export async function fetchPositionInfoCyber1(): Promise<PositionInfoCyber1[]> {
     }
 
 
-    return data as PositionInfoCyber1[];
+    return data as UMPositionInfo3[];
   } catch (error) {
     if (error instanceof Error) {
       console.error('Failed to fetch UM position info:', error);

@@ -19,7 +19,7 @@ import 'chartjs-adapter-date-fns';
 ChartJS.register(TimeScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 interface EquityData {
-  actual_equity: number;
+  NAV: number;
   timestamp: string;
 }
 
@@ -35,13 +35,13 @@ interface ChartData {
   }[];
 }
 
-const EquityChartCyber1: React.FC = () => {
+const NAVCyberBinance1: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
 
   useEffect(() => {
     const fetchEquityData = async () => {
       const { data, error } = await supabase
-        .from('equity_data_cyberX1')
+        .from('luminova_Binance_1')
         .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
       if (error) {
@@ -59,12 +59,12 @@ const EquityChartCyber1: React.FC = () => {
         labels: sorted.map((d) => new Date(d.timestamp)),
         datasets: [
           {
-            label: 'Actual Equity',
-            data: sorted.map((d) => d.actual_equity),
-            borderColor: 'rgba(75, 192, 192, 1)',
+            label: 'NAV',
+            data: sorted.map((d) => d.NAV),
+            borderColor: color,
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0,
-            pointRadius: 4,
+            tension: 0.1,
+            pointRadius: 3,
           },
         ],
       };
@@ -73,18 +73,18 @@ const EquityChartCyber1: React.FC = () => {
     };
 
     fetchEquityData();
-  }, []);
+  }, [color]);
 
   const options: ChartOptions<'line'> = {
     responsive: true,
-    maintainAspectRatio: false, // 👈 Crucial to fix the height issue
+    maintainAspectRatio: false, // 👈 Important fix
     plugins: {
       legend: { display: false },
       title: {
         display: true,
-        text: 'Net Assets',
+        text: 'NAV & Accum.NAV',
         font: {
-          size: 18,
+          size: 16,
         },
       },
     },
@@ -98,20 +98,23 @@ const EquityChartCyber1: React.FC = () => {
           },
         },
         ticks: {
-          stepSize: 1,
+          maxTicksLimit: 6,
         },
       },
       y: {
         beginAtZero: false,
+        title: {
+          display: false,
+        },
       },
     },
   };
 
   return (
-    <div className="w-full h-full"> {/* 👈 Ensures it fills parent container */}
+    <div className="w-full h-full">
       {chartData ? <Line data={chartData} options={options} /> : <p>Loading...</p>}
     </div>
   );
 };
 
-export default EquityChartCyber1;
+export default NAVCyberBinance1;

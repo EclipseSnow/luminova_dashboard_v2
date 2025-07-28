@@ -38,3 +38,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 "# binancedashboard" 
 "# binancedashboard2" 
 "# wabit_dashboard" 
+"# luminova_dashboard" 
