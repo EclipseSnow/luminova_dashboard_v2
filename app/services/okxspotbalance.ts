@@ -62,7 +62,7 @@ const PASSPHRASE = process.env.OKX_PASSPHRASE;
 const BASE_URL = 'https://www.okx.com'; // Use for production
 
 // Cache for API responses
-let spotBalanceCache: { data: any; timestamp: number } | null = null;
+let spotBalanceCache: { data: { ccy: string; spotBal: number; spot_price: number; notional_value: number }[]; timestamp: number } | null = null;
 const CACHE_DURATION = 30000; // 30 seconds
 
 // --- Utility Functions ---
