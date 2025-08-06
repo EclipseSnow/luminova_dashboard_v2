@@ -64,7 +64,7 @@ const EquityChartCyberOKX1: React.FC = () => {
             borderColor: 'rgba(75, 192, 192, 1)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             tension: 0,
-            pointRadius: 4,
+            pointRadius: 1.5,
           },
         ],
       };
