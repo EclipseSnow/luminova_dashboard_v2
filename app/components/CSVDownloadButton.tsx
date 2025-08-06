@@ -1,7 +1,21 @@
 'use client';
 
+interface CSVDataItem {
+  asset: string;
+  spotBalance: number;
+  spotNotional: number;
+  futuresSide?: string;
+  futuresNotional: number;
+  entryPrice?: number;
+  unRealizedProfit?: number;
+  leverage?: number;
+  liquidationPrice?: number;
+  initialMargin?: number;
+  maintenanceMargin?: number;
+}
+
 interface CSVDownloadButtonProps {
-  data: any[];
+  data: CSVDataItem[];
   filename: string;
   type?: 'binance' | 'okx';
 }
@@ -22,10 +36,10 @@ export default function CSVDownloadButton({ data, filename, type = 'okx' }: CSVD
         item.spotNotional > 0 ? item.spotNotional.toFixed(2) : '',
         item.futuresSide || '',
         item.futuresNotional !== 0 ? item.futuresNotional.toFixed(2) : '',
-        item.entryPrice > 0 ? item.entryPrice.toFixed(2) : '',
-        item.unRealizedProfit !== 0 ? item.unRealizedProfit.toFixed(2) : '',
-        item.leverage > 0 ? item.leverage.toFixed(2) : '',
-        item.liquidationPrice > 0 ? item.liquidationPrice.toFixed(2) : ''
+        (item.entryPrice && item.entryPrice > 0) ? item.entryPrice.toFixed(2) : '',
+        (item.unRealizedProfit && item.unRealizedProfit !== 0) ? item.unRealizedProfit.toFixed(2) : '',
+        (item.leverage && item.leverage > 0) ? item.leverage.toFixed(2) : '',
+        (item.liquidationPrice && item.liquidationPrice > 0) ? item.liquidationPrice.toFixed(2) : ''
       ].join(','));
     } else {
       // OKX headers
@@ -38,9 +52,9 @@ export default function CSVDownloadButton({ data, filename, type = 'okx' }: CSVD
         item.spotNotional > 0 ? item.spotNotional.toFixed(2) : '',
         item.futuresSide || '',
         item.futuresNotional !== 0 ? item.futuresNotional.toFixed(2) : '',
-        item.initialMargin > 0 ? item.initialMargin.toFixed(2) : '',
-        item.maintenanceMargin > 0 ? item.maintenanceMargin.toFixed(2) : '',
-        item.leverage > 0 ? item.leverage.toFixed(2) : ''
+        (item.initialMargin && item.initialMargin > 0) ? item.initialMargin.toFixed(2) : '',
+        (item.maintenanceMargin && item.maintenanceMargin > 0) ? item.maintenanceMargin.toFixed(2) : '',
+        (item.leverage && item.leverage > 0) ? item.leverage.toFixed(2) : ''
       ].join(','));
     }
     
