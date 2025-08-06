@@ -6,6 +6,8 @@ export interface OkxFuturesPosition {
     side: string;           // 'long' or 'short'
     notional: number;       // Notional value (signed: positive for long, negative for short)
     initialMargin: number;  // Initial margin requirement
+    maintenanceMargin: number; // Maintenance margin requirement
+    leverage: number;       // Leverage used for the position
 }
 
 // --- Configuration ---
@@ -14,6 +16,10 @@ const API_KEY = process.env.OKX_API_KEY;
 const API_SECRET = process.env.OKX_API_SECRET;
 const PASSPHRASE = process.env.OKX_PASSPHRASE;
 const BASE_URL = 'https://www.okx.com'; // Use for production
+
+// Cache for API responses
+let futuresPositionsCache: { data: OkxFuturesPosition[]; timestamp: number } | null = null;
+const CACHE_DURATION = 30000; // 30 seconds
 
 // --- Utility Functions ---
 
@@ -24,7 +30,13 @@ const BASE_URL = 'https://www.okx.com'; // Use for production
  */
 async function getOkxServerTime(): Promise<string> {
     try {
-        const response = await fetch(`${BASE_URL}/api/v5/public/time`);
+        const response = await fetch(`${BASE_URL}/api/v5/public/time`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+        });
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Failed to fetch OKX server time: ${response.status} ${errorText}`);
@@ -36,8 +48,8 @@ async function getOkxServerTime(): Promise<string> {
         const dtObject = new Date(parseInt(serverTimeMs, 10));
         // toISOString() already returns in 'YYYY-MM-DDTHH:mm:ss.sssZ' format
         return dtObject.toISOString();
-    } catch (error: any) {
-        console.error(`Error fetching OKX server time: ${error.message}`);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+        console.error(`Error fetching OKX server time: ${error instanceof Error ? error.message : String(error)}`);
         // Fallback to local UTC time if server time cannot be fetched (less ideal, but better than failing)
         console.warn("Falling back to local UTC time for timestamp. Consider checking network or OKX API status.");
         return new Date().toISOString();
@@ -76,6 +88,12 @@ function signRequest(
  * @returns {Promise<OkxFuturesPosition[]>}
  */
 export async function fetchOkxFuturesPositions(): Promise<OkxFuturesPosition[]> {
+    // Check cache first
+    const now = Date.now();
+    if (futuresPositionsCache && (now - futuresPositionsCache.timestamp) < CACHE_DURATION) {
+        return futuresPositionsCache.data;
+    }
+
     if (!API_KEY || !API_SECRET || !PASSPHRASE) {
         throw new Error('OKX API credentials (API_KEY, API_SECRET, PASSPHRASE) are not configured.');
     }
@@ -91,6 +109,9 @@ export async function fetchOkxFuturesPositions(): Promise<OkxFuturesPosition[]> 
         'OK-ACCESS-TIMESTAMP': timestamp,
         'OK-ACCESS-PASSPHRASE': PASSPHRASE,
         'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
     };
     const url = `${BASE_URL}${endpoint}`;
     try {
@@ -141,11 +162,22 @@ export async function fetchOkxFuturesPositions(): Promise<OkxFuturesPosition[]> 
 
             // Initial margin requirement
             const initialMargin = pos.imr ? parseFloat(pos.imr) : 0;
-            results.push({ symbol, side, notional, initialMargin });
+            // Maintenance margin requirement
+            const maintenanceMargin = pos.mmr ? parseFloat(pos.mmr) : 0;
+            // Leverage
+            const leverage = pos.lever ? parseFloat(pos.lever) : 0;
+            results.push({ symbol, side, notional, initialMargin, maintenanceMargin, leverage });
         }
+        
+        // Cache the results
+        futuresPositionsCache = {
+            data: results,
+            timestamp: now
+        };
+        
         return results;
-    } catch (error: any) {
-        console.error(`Failed to fetch futures positions: ${error.message}`);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+        console.error(`Failed to fetch futures positions: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
     }
 }

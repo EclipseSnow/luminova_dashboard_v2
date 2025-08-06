@@ -13,20 +13,28 @@ async function getBinanceServerTimeForPage(): Promise<number> {
     return cachedPageServerTime;
   }
   try {
-    const timeResponse = await fetch('https://api.binance.com/api/v3/time');
+    const timeResponse = await fetch('https://api.binance.com/api/v3/time', {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
+      },
+    });
     if (!timeResponse.ok) {
       const errorText = await timeResponse.text();
       console.error(`Failed to fetch Binance server time in page.tsx. Status: ${timeResponse.status}, Error: ${errorText}`);
       // Fallback to local time, but warn that it might cause recvWindow issues
+      console.warn("Falling back to local time for Binance timestamp. This may cause 'recvWindow' issues if time drift is significant or Cloudflare is still blocking.");
       return Date.now();
     }
     const timeData = await timeResponse.json();
     cachedPageServerTime = timeData.serverTime;
     lastPageTimeFetch = now;
-    return cachedPageServerTime;
+    return cachedPageServerTime!; // Use non-null assertion as it's just been assigned a number
   } catch (error) {
     console.error('Error fetching Binance server time in page.tsx:', error);
     // Fallback to local time if network error
+    console.warn("Falling back to local time for Binance timestamp due to network error. This may cause 'recvWindow' issues.");
     return Date.now();
   }
 }
@@ -63,6 +71,7 @@ export default async function Home() {
   // Use the centralized server time fetcher for this module
   const timestamp = await getBinanceServerTimeForPage();
 
+  // Set recvWindow to a higher value like 60000ms (60 seconds) to tolerate network delays
   const queryString = `timestamp=${timestamp}&recvWindow=60000`;
   const signature = crypto
     .createHmac('sha256', apiSecret)
@@ -75,6 +84,10 @@ export default async function Home() {
     {
       headers: {
         'X-MBX-APIKEY': apiKey,
+        // Add Cloudflare bypass headers to the main API call as well
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
       },
       cache: 'no-store',
     }

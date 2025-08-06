@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 import { fetchPortfolioMarginAccountInfo } from '../services/portfoliomarginaccountinfo_usdt';
 import { fetchUMPositionInfo } from '../services/currentcmposition_usdt';
 import { UMPositionInfo } from '../services/currentcmposition_usdt';
@@ -100,20 +102,16 @@ export default async function PositionsList() {
     .reduce((total, position) => total + position.totalNotionalValue, 0);
 
   const spotValueOKX = okxSpotBalances
-    .reduce((total, position) => total + parseFloat(position.notional_value), 0);
+    .reduce((total, position) => total + position.notional_value, 0);
 
   const totalFuturesNotionalOKX = okxFuturesPositions.reduce((total, position) => {
-      // Ensure 'position.notional' is parsed as a float
-      return total + parseFloat(position.notional);
+      return total + position.notional;
   }, 0);
   
 
-  // const futuresValue = positions.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount;
-  // const futuresValue2 = positions2.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount2;
-
-  const futuresValue = positions.reduce((total, position) => total + parseFloat(position.notional), 0);
-  const futuresValue2 = positions2.reduce((total, position) => total + parseFloat(position.notional), 0);
-  const futuresValue3 = positions3.reduce((total, position) => total + parseFloat(position.notional), 0);
+  const futuresValue = positions.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount;
+  const futuresValue2 = positions2.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount2;
+  const futuresValue3 = positions2.reduce((total, position) => total + parseFloat(position.notional), 0) - usdcusdtAmount3;
 
   const totalEquity = parseFloat(portfoliomarginaccountinfo.actualEquity);
   const totalPositionalExposure = spotValue + futuresValue;
@@ -130,17 +128,21 @@ export default async function PositionsList() {
   const totalLeverage3 = totalEquity3 > 0 ? (spotValue3 + Math.abs(futuresValue3)) / totalEquity3 : 0;
   const totalDirectionalLeverage3 = totalEquity3 > 0 ? (spotValue3 + futuresValue3) / totalEquity3 : 0;
 
-  const totalequityOKX = accountbalanceOKX.totalEq
-  const totalIMROKX = accountbalanceOKX.imr
-  const totalMMROKX = accountbalanceOKX.mmr
-  const totalPositionalExposureOKX = spotValueOKX + totalFuturesNotionalOKX
-  const totalLeverageOKX = (spotValueOKX+Math.abs(totalFuturesNotionalOKX))/totalequityOKX
-  const totalDirectionalLeverageOKX = (totalPositionalExposureOKX)/totalequityOKX
+  const totalequityOKX = accountbalanceOKX?.totalEq ? parseFloat(accountbalanceOKX.totalEq) : 0;
+  const totalIMROKX = accountbalanceOKX?.imr ? parseFloat(accountbalanceOKX.imr) : 0; // Assuming imr can also be a string
+  const totalMMROKX = accountbalanceOKX?.mmr ? parseFloat(accountbalanceOKX.mmr) : 0; // Assuming mmr can also be a string
+
+  const totalPositionalExposureOKX = spotValueOKX + totalFuturesNotionalOKX;
+
+  // Ensure division by zero is handled safely for these calculations
+  const totalLeverageOKX = totalequityOKX !== 0 ? (spotValueOKX + Math.abs(totalFuturesNotionalOKX)) / totalequityOKX : 0;
+  const totalDirectionalLeverageOKX = totalequityOKX !== 0 ? (totalPositionalExposureOKX) / totalequityOKX : 0;
 
   // Get today's date
 
   const inceptionDate1 = navMetrics1?.inceptionDate || 'N/A';
   const inceptionDate2 = navMetrics2?.inceptionDate || 'N/A';
+  
 
   const today = new Date();
   const formattedToday = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
@@ -163,7 +165,7 @@ export default async function PositionsList() {
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">CyberX OKX 01</h2>
           <p className="text-sm text-gray-600">Current Date and Time: {getCurrentDateTimeInUTC8()}</p>
-          <button className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</button>
+          <Link href="/cyberx-okx01" className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</Link>
         </div>
 
         {/* 3 vertical sections */}
@@ -246,7 +248,7 @@ export default async function PositionsList() {
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">CyberX CTA 币安 01</h2>
           <p className="text-sm text-gray-600">Current Date and Time: {getCurrentDateTimeInUTC8()}</p>
-          <button className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</button>
+          <Link href="/cyberx-binance01" className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</Link>
         </div>
 
         {/* 3 vertical sections */}
@@ -262,8 +264,8 @@ export default async function PositionsList() {
                 {[
                   ['总权益 (USDT)', `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalEquity)}`],
                   ['总风险暴露 (USDT)', `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(totalPositionalExposure)}`],
-                  ['总维持保证金', `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(portfoliomarginaccountinfo.accountMaintMargin)}`],
-                  ['总初始保证金', `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(portfoliomarginaccountinfo.accountInitialMargin)}`],
+                  ['总维持保证金', `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(portfoliomarginaccountinfo.accountMaintMargin))}`],
+                  ['总初始保证金', `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(parseFloat(portfoliomarginaccountinfo.accountInitialMargin))}`],
                   ['总杠杆', totalLeverage.toFixed(2)],
                   ['总方向性杠杆', totalDirectionalLeverage.toFixed(2)]
                 ].map(([label, value]) => (
@@ -329,7 +331,7 @@ export default async function PositionsList() {
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">CyberX 币安 02</h2>
           <p className="text-sm text-gray-600">Current Date and Time: {getCurrentDateTimeInUTC8()}</p>
-          <button className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</button>
+          <Link href="/cyberx-binance02" className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</Link>
         </div>
 
         {/* 3 vertical sections */}
@@ -412,7 +414,7 @@ export default async function PositionsList() {
         <div className="flex justify-between items-center">
           <h2 className="text-lg font-semibold">CyberX 币安 03</h2>
           <p className="text-sm text-gray-600">Current Date and Time: {getCurrentDateTimeInUTC8()}</p>
-          <button className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</button>
+          <Link href="/cyberx-binance03" className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</Link>
         </div>
 
         {/* 3 vertical sections */}
@@ -452,12 +454,12 @@ export default async function PositionsList() {
               <div className="w-full lg:w-1/2 flex flex-col space-y-3 pt-4 lg:pt-0 lg:pl-0 lg:pl-2">
                 {[
                   ['时间窗口', `${inceptionDate2} to ${formattedToday}`],
-                  ['窗口内盈亏 (USDT)', navMetrics2?.period_pnl != null
-                    ? `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(navMetrics2.period_pnl))}`
+                  ['窗口内盈亏 (USDT)', navMetrics3?.period_pnl != null
+                    ? `$${new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number(navMetrics3.period_pnl))}`
                     : '—'],
-                  ['窗口内盈亏率 %', `${navMetrics2?.period_pnl_percent}%`],
-                  ['最大回撤', `${navMetrics2?.max_drawdown}%`],
-                  ['年化收益率 (1Y)', `${navMetrics2?.annualized_return_1Y}%`]
+                  ['窗口内盈亏率 %', `${navMetrics3?.period_pnl_percent}%`],
+                  ['最大回撤', `${navMetrics3?.max_drawdown}%`],
+                  ['年化收益率 (1Y)', `${navMetrics3?.annualized_return_1Y}%`]
                 ].map(([label, value]) => (
                   <div className="grid grid-cols-[minmax(100px,_auto)_1fr] gap-x-2 items-baseline" key={label}>
                     <span className="font-semibold break-words text-left">{label}:</span>

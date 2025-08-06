@@ -61,6 +61,10 @@ const API_SECRET = process.env.OKX_API_SECRET;
 const PASSPHRASE = process.env.OKX_PASSPHRASE;
 const BASE_URL = 'https://www.okx.com'; // Use for production
 
+// Cache for API responses
+let spotBalanceCache: { data: any; timestamp: number } | null = null;
+const CACHE_DURATION = 30000; // 30 seconds
+
 // --- Utility Functions ---
 
 /**
@@ -70,7 +74,13 @@ const BASE_URL = 'https://www.okx.com'; // Use for production
  */
 async function getOkxServerTime(): Promise<string> {
     try {
-        const response = await fetch(`${BASE_URL}/api/v5/public/time`);
+        const response = await fetch(`${BASE_URL}/api/v5/public/time`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+        });
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Failed to fetch OKX server time: ${response.status} ${errorText}`);
@@ -82,8 +92,8 @@ async function getOkxServerTime(): Promise<string> {
         const dtObject = new Date(parseInt(serverTimeMs, 10));
         // toISOString() already returns in 'YYYY-MM-DDTHH:mm:ss.sssZ' format
         return dtObject.toISOString();
-    } catch (error: any) {
-        console.error(`Error fetching OKX server time: ${error.message}`);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+        console.error(`Error fetching OKX server time: ${error instanceof Error ? error.message : String(error)}`);
         // Fallback to local UTC time if server time cannot be fetched (less ideal, but better than failing)
         console.warn("Falling back to local UTC time for timestamp. Consider checking network or OKX API status.");
         return new Date().toISOString();
@@ -123,15 +133,21 @@ function signRequest(
  */
 async function getSpotPrice(instId: string): Promise<number | null> {
     try {
-        const response = await fetch(`${BASE_URL}/api/v5/market/ticker?instId=${instId}`);
+        const response = await fetch(`${BASE_URL}/api/v5/market/ticker?instId=${instId}`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+        });
         if (!response.ok) return null;
         const data = await response.json();
         if (data && data.data && data.data[0] && data.data[0].last) {
             return parseFloat(data.data[0].last);
         }
         return null;
-    } catch (error) {
-        console.error(`Error fetching spot price for ${instId}:`, error);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+        console.error(`Error fetching spot price for ${instId}: ${error instanceof Error ? error.message : String(error)}`);
         return null;
     }
 }
@@ -146,6 +162,12 @@ export async function fetchOkxSpotBalancesWithNotional(): Promise<{
     spot_price: number;
     notional_value: number;
 }[]> {
+    // Check cache first
+    const now = Date.now();
+    if (spotBalanceCache && (now - spotBalanceCache.timestamp) < CACHE_DURATION) {
+        return spotBalanceCache.data;
+    }
+
     if (!API_KEY || !API_SECRET || !PASSPHRASE) {
         throw new Error('OKX API credentials (API_KEY, API_SECRET, PASSPHRASE) are not configured.');
     }
@@ -162,6 +184,9 @@ export async function fetchOkxSpotBalancesWithNotional(): Promise<{
         'OK-ACCESS-TIMESTAMP': timestamp,
         'OK-ACCESS-PASSPHRASE': PASSPHRASE,
         'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
     };
     const url = `${BASE_URL}${endpoint}`;
 
@@ -198,10 +223,16 @@ export async function fetchOkxSpotBalancesWithNotional(): Promise<{
             const notional_value = spotBal * spot_price;
             results.push({ ccy, spotBal, spot_price, notional_value });
         }
+        
+        // Cache the results
+        spotBalanceCache = {
+            data: results,
+            timestamp: now
+        };
+        
         return results;
-    } catch (error: any) {
-        console.error(`Failed to fetch spot balances: ${error.message}`);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+        console.error(`Failed to fetch spot balances: ${error instanceof Error ? error.message : String(error)}`);
         throw error;
     }
 }
-

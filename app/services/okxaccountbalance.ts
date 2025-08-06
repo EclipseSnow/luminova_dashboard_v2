@@ -2,7 +2,6 @@ import crypto from 'crypto';
 
 // --- Interfaces for OKX API Response ---
 
-
 // Represents a single account type (e.g., Funding, Trading)
 export interface OkxAccountBalance {
     acType: string;         // Account type, e.g., "1" (spot), "2" (futures), etc.
@@ -49,7 +48,13 @@ const BASE_URL = 'https://www.okx.com'; // Use for production
  */
 async function getOkxServerTime(): Promise<string> {
     try {
-        const response = await fetch(`${BASE_URL}/api/v5/public/time`);
+        const response = await fetch(`${BASE_URL}/api/v5/public/time`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Accept-Language': 'en-US,en;q=0.9',
+            },
+        });
         if (!response.ok) {
             const errorText = await response.text();
             throw new Error(`Failed to fetch OKX server time: ${response.status} ${errorText}`);
@@ -61,8 +66,8 @@ async function getOkxServerTime(): Promise<string> {
         const dtObject = new Date(parseInt(serverTimeMs, 10));
         // toISOString() already returns in 'YYYY-MM-DDTHH:mm:ss.sssZ' format
         return dtObject.toISOString();
-    } catch (error: any) {
-        console.error(`Error fetching OKX server time: ${error.message}`);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+        console.error(`Error fetching OKX server time: ${error instanceof Error ? error.message : String(error)}`);
         // Fallback to local UTC time if server time cannot be fetched (less ideal, but better than failing)
         console.warn("Falling back to local UTC time for timestamp. Consider checking network or OKX API status.");
         return new Date().toISOString();
@@ -96,26 +101,6 @@ function signRequest(
 }
 
 /**
- * Fetches the spot price for a given instrument (e.g., BTC-USDT) from OKX.
- * @param instId The instrument ID (e.g., 'BTC-USDT').
- * @returns {Promise<number | null>} The last traded price, or null if not found.
- */
-async function getSpotPrice(instId: string): Promise<number | null> {
-    try {
-        const response = await fetch(`${BASE_URL}/api/v5/market/ticker?instId=${instId}`);
-        if (!response.ok) return null;
-        const data = await response.json();
-        if (data && data.data && data.data[0] && data.data[0].last) {
-            return parseFloat(data.data[0].last);
-        }
-        return null;
-    } catch (error) {
-        console.error(`Error fetching spot price for ${instId}:`, error);
-        return null;
-    }
-}
-
-/**
  * Fetches the account balance summary (totalEq, imr, mmr) from OKX.
  * @returns {Promise<OkxAccountSummary | null>} The account summary or null if an error occurs.
  */
@@ -137,6 +122,9 @@ export async function fetchOkxAccountSummary(): Promise<OkxAccountSummary | null
         'OK-ACCESS-TIMESTAMP': timestamp,
         'OK-ACCESS-PASSPHRASE': PASSPHRASE,
         'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'Accept-Language': 'en-US,en;q=0.9',
     };
     const url = `${BASE_URL}${endpoint}`;
 
@@ -169,26 +157,8 @@ export async function fetchOkxAccountSummary(): Promise<OkxAccountSummary | null
 
         return summary;
 
-    } catch (error: any) {
-        console.error(`Failed to fetch account summary: ${error.message}`);
+    } catch (error: unknown) { // Changed 'any' to 'unknown'
+        console.error(`Failed to fetch account summary: ${error instanceof Error ? error.message : String(error)}`);
         return null; // Return null on error as per the Python example's implicit behavior
     }
 }
-
-// Example usage (assuming you have a way to run this in a Node.js environment)
-// (async () => {
-//     try {
-//         const summary = await fetchOkxAccountSummary();
-//         if (summary) {
-//             console.log("OKX Account Summary:");
-//             console.log(`Timestamp: ${summary.timestamp}`);
-//             console.log(`Total Equity (totalEq): ${summary.totalEq}`);
-//             console.log(`Initial Margin Requirement (imr): ${summary.imr}`);
-//             console.log(`Maintenance Margin Requirement (mmr): ${summary.mmr}`);
-//         } else {
-//             console.log("Could not retrieve OKX account summary.");
-//         }
-//     } catch (e) {
-//         console.error("An error occurred during execution:", e);
-//     }
-// })();
