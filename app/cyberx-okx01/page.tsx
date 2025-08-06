@@ -2,7 +2,6 @@ import { fetchOkxSpotBalancesWithNotional } from '../services/okxspotbalance';
 import { fetchOkxFuturesPositions, OkxFuturesPosition } from '../services/okxfuturesbalance';
 import CSVDownloadButton from '../components/CSVDownloadButton';
 import Link from 'next/link';
-
 // Asset normalization function
 function normalizeAssetName(assetName: string): string {
   const normalizationMap: Record<string, string> = {
@@ -167,12 +166,12 @@ export default async function CyberXOKX01Details() {
 
           
           <div className="mt-6">
-            <a 
+            <Link 
               href="/" 
               className="text-blue-500 hover:underline"
             >
               ← Back to Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -187,12 +186,12 @@ export default async function CyberXOKX01Details() {
             Failed to load portfolio data. Please check your API credentials and try again.
           </p>
           <div className="mt-6">
-            <a 
+            <Link 
               href="/" 
               className="text-blue-500 hover:underline"
             >
               ← Back to Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </div>
