@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function CyberXBinance03Details() {
   return (
     <div className="w-full p-4">
@@ -24,12 +26,12 @@ export default function CyberXBinance03Details() {
         </div>
         
         <div className="mt-6">
-          <a 
+          <Link 
             href="/" 
             className="text-blue-500 hover:underline"
           >
             ← Back to Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     </div>
