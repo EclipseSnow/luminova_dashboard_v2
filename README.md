@@ -40,3 +40,4 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 "# wabit_dashboard" 
 "# luminova_dashboard" 
 "# luminovadashboard_v2" 
+"# luminova_dashboard_v2" 
