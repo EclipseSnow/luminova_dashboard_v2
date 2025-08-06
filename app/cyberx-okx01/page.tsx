@@ -1,6 +1,7 @@
 import { fetchOkxSpotBalancesWithNotional } from '../services/okxspotbalance';
 import { fetchOkxFuturesPositions, OkxFuturesPosition } from '../services/okxfuturesbalance';
 import CSVDownloadButton from '../components/CSVDownloadButton';
+import Link from 'next/link';
 
 // Asset normalization function
 function normalizeAssetName(assetName: string): string {
