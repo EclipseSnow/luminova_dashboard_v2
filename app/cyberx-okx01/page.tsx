@@ -92,7 +92,6 @@ export default async function CyberXOKX01Details() {
           <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-2xl font-bold">CyberX OKX 01 - Detailed View</h1>
-              <p className="text-gray-600">This is the detailed view for CyberX OKX 01 portfolio.</p>
             </div>
             <CSVDownloadButton data={combinedData} filename="cyberx-okx01-positions.csv" />
           </div>
@@ -100,20 +99,20 @@ export default async function CyberXOKX01Details() {
           {/* Positions Table */}
           <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-900">Asset Positions</h2>
+              <h2 className="text-lg font-semibold text-gray-900">持有仓位</h2>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Asset</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spot Balance</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Spot Notional</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Futures Side</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Futures Notional</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Margin</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Maintenance Margin</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Leverage</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">资产</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">现货余额</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">现货名义价值</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">方向</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">合约名义价值</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">初始保证金</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">维持保证金</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">杠杆</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
