@@ -64,7 +64,7 @@ const NAVChartOKX1: React.FC<{ color?: string }> = ({ color = 'blue' }) => {
             borderColor: color,
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
             tension: 0.1,
-            pointRadius: 3,
+            pointRadius: 1.5,
           },
         ],
       };
