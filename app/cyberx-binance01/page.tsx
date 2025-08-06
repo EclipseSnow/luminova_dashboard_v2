@@ -2,6 +2,7 @@ import { fetchAccountBalanceWithoutUSDT } from '../services/accountbalancewithou
 import { fetchUMPositionInfo } from '../services/currentcmposition_usdt';
 import { fetchAllPrices } from '../services/accountbalance_usdt';
 import CSVDownloadButton from '../components/CSVDownloadButton';
+import Link from 'next/link';
 
 // Asset normalization function
 function normalizeAssetName(assetName: string): string {
@@ -194,12 +195,12 @@ export default async function CyberXBinance01Details() {
 
           
           <div className="mt-6">
-            <a 
+            <Link 
               href="/" 
               className="text-blue-500 hover:underline"
             >
               ← Back to Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </div>
@@ -214,12 +215,12 @@ export default async function CyberXBinance01Details() {
             Failed to load portfolio data. Please check your API credentials and try again.
           </p>
           <div className="mt-6">
-            <a 
+            <Link 
               href="/" 
               className="text-blue-500 hover:underline"
             >
               ← Back to Dashboard
-            </a>
+            </Link>
           </div>
         </div>
       </div>
