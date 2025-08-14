@@ -41,7 +41,7 @@ const EquityChartCyberBinance2: React.FC = () => {
   useEffect(() => {
     const fetchEquityData = async () => {
       const { data, error } = await supabase
-        .from('luminova_Binance_2')
+        .from('luminova_Binance_LTP')
         .select('*') as { data: EquityData[] | null, error: { message: string } | null };
 
       if (error) {
