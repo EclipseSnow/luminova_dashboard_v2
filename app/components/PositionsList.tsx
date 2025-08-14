@@ -329,7 +329,7 @@ export default async function PositionsList() {
       <div className="bg-gray-50 shadow-md rounded-lg p-6 w-full flex flex-col space-y-5 ">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <h2 className="text-lg font-semibold">CyberX 币安 02</h2>
+          <h2 className="text-lg font-semibold">LTP 币安 02</h2>
           <p className="text-sm text-gray-600">Current Date and Time: {getCurrentDateTimeInUTC8()}</p>
           <Link href="/cyberx-binance02" className="text-sm text-blue-500 hover:underline">View Details &gt;&gt;</Link>
         </div>
