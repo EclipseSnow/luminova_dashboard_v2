@@ -104,8 +104,8 @@ export default async function CyberXBinance02Details() {
         <div className="bg-gray-50 shadow-md rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className="text-2xl font-bold">CyberX 币安 02 - Detailed View</h1>
-              <p className="text-gray-600">This is the detailed view for CyberX 币安 02 portfolio.</p>
+              <h1 className="text-2xl font-bold">LTP 币安 02 - Detailed View</h1>
+              <p className="text-gray-600">This is the detailed view for LTP 币安 02 portfolio.</p>
             </div>
             <CSVDownloadButton data={combinedData} filename="cyberx-binance02-positions.csv" type="binance" />
           </div>
