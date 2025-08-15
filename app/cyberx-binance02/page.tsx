@@ -1,7 +1,7 @@
-import { fetchAccountBalanceWithoutUSDT } from '../../services/accountbalancewithoutusdt_usdt';
-import { fetchUMPositionInfo, UMPositionInfo } from '../../services/currentcmposition_usdt';
-import { fetchAllPrices, AccountBalance } from '../../services/accountbalance_usdt';
-import CSVDownloadButton from '../CSVDownloadButton';
+import { fetchAccountBalanceWithoutUSDT2 } from '../services/accountbalancewithoutusdt_usdt_2';
+import { fetchUMPositionInfo2 } from '../services/currentcmposition_usdt_2';
+import { fetchAllPrices } from '../services/accountbalance_usdt';
+import CSVDownloadButton from '../components/CSVDownloadButton';
 import Link from 'next/link';
 
 // Asset normalization function
@@ -13,11 +13,11 @@ function normalizeAssetName(assetName: string): string {
   return normalizationMap[assetName] || assetName;
 }
 
-export default async function CyberXBinance01Details() {
+export default async function CyberXBinance02Details() {
   try {
     // Fetch data
-    const accountBalances = await fetchAccountBalanceWithoutUSDT();
-    const futuresPositions = await fetchUMPositionInfo();
+    const accountBalances = await fetchAccountBalanceWithoutUSDT2();
+    const futuresPositions = await fetchUMPositionInfo2();
     const prices = await fetchAllPrices();
 
     // Create a map to combine spot and futures data by asset
@@ -34,7 +34,7 @@ export default async function CyberXBinance01Details() {
     }>();
 
     // Add spot balances with normalization
-    accountBalances.forEach((balance: AccountBalance) => {
+    accountBalances.forEach(balance => {
       const normalizedAsset = normalizeAssetName(balance.asset);
       const spotBalance = parseFloat(balance.crossMarginAsset);
       const spotPrice = normalizedAsset === 'USDT' ? 1 : prices.get(`${normalizedAsset}USDT`) ?? 0;
@@ -61,7 +61,7 @@ export default async function CyberXBinance01Details() {
     });
 
     // Add futures positions with normalization
-    futuresPositions.forEach((futures: UMPositionInfo) => {
+    futuresPositions.forEach(futures => {
       // Extract base asset from symbol (e.g., "BTCUSDT" -> "BTC")
       const baseAsset = futures.symbol.replace('USDT', '');
       const normalizedAsset = normalizeAssetName(baseAsset);
@@ -104,10 +104,10 @@ export default async function CyberXBinance01Details() {
         <div className="bg-gray-50 shadow-md rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h1 className="text-2xl font-bold">CyberX CTA 币安 01 - Detailed View</h1>
-              <p className="text-gray-600">This is the detailed view for CyberX CTA 币安 01 portfolio.</p>
+              <h1 className="text-2xl font-bold">CyberX 币安 02 - Detailed View</h1>
+              <p className="text-gray-600">This is the detailed view for CyberX 币安 02 portfolio.</p>
             </div>
-            <CSVDownloadButton data={combinedData} filename="cyberx-binance01-positions.csv" type="binance" />
+            <CSVDownloadButton data={combinedData} filename="cyberx-binance02-positions.csv" type="binance" />
           </div>
           
           {/* Positions Table */}
@@ -210,7 +210,7 @@ export default async function CyberXBinance01Details() {
     return (
       <div className="w-full p-4">
         <div className="bg-gray-50 shadow-md rounded-lg p-6">
-          <h1 className="text-2xl font-bold mb-4">CyberX CTA 币安 01 - Error</h1>
+          <h1 className="text-2xl font-bold mb-4">CyberX 币安 02 - Error</h1>
           <p className="text-red-600 mb-4">
             Failed to load portfolio data. Please check your API credentials and try again.
           </p>
